@@ -1,4 +1,7 @@
-BasicGame.Game = class Game {
+import { GlobalConstants } from "./util/GlobalConstants.js";
+
+export default class Game {
+  //BasicGame.Game = class Game {
   create() {
     this.setupBackground();
     this.setupPlayer();
@@ -29,7 +32,7 @@ BasicGame.Game = class Game {
       this.game.height,
       "sea"
     );
-    this.sea.autoScroll(0, BasicGame.SEA_SCROLL_SPEED);
+    this.sea.autoScroll(0, GlobalConstants.SEA_SCROLL_SPEED);
   }
 
   setupAudio() {
@@ -52,7 +55,7 @@ BasicGame.Game = class Game {
     this.player.animations.add("ghost", [3, 0, 3, 1], 20, true);
     this.player.play("fly");
     this.physics.enable(this.player, Phaser.Physics.ARCADE);
-    this.player.speed = this.player.speed = BasicGame.PLAYER_SPEED;
+    this.player.speed = this.player.speed = GlobalConstants.PLAYER_SPEED;
     this.player.body.collideWorldBounds = true;
     // 20 x 20 pixel hitbox, centered a little bit higher than the center
     this.player.body.setSize(20, 20, 0, -5);
@@ -71,7 +74,7 @@ BasicGame.Game = class Game {
     this.enemyPool.setAll("checkWorldBounds", true);
     this.enemyPool.setAll(
       "reward",
-      BasicGame.ENEMY_REWARD,
+      GlobalConstants.ENEMY_REWARD,
       false,
       false,
       0,
@@ -79,7 +82,7 @@ BasicGame.Game = class Game {
     );
     this.enemyPool.setAll(
       "dropRate",
-      BasicGame.ENEMY_DROP_RATE,
+      GlobalConstants.ENEMY_DROP_RATE,
       false,
       false,
       0,
@@ -94,7 +97,7 @@ BasicGame.Game = class Game {
       }, this);
     });
     this.nextEnemyAt = 0;
-    this.enemyDelay = BasicGame.SPAWN_ENEMY_DELAY;
+    this.enemyDelay = GlobalConstants.SPAWN_ENEMY_DELAY;
 
     // Harder white enemies
     this.shooterPool = this.add.group();
@@ -107,7 +110,7 @@ BasicGame.Game = class Game {
     this.shooterPool.setAll("checkWorldBounds", true);
     this.shooterPool.setAll(
       "reward",
-      BasicGame.SHOOTER_REWARD,
+      GlobalConstants.SHOOTER_REWARD,
       false,
       false,
       0,
@@ -115,7 +118,7 @@ BasicGame.Game = class Game {
     );
     this.shooterPool.setAll(
       "dropRate",
-      BasicGame.SHOOTER_DROP_RATE,
+      GlobalConstants.SHOOTER_DROP_RATE,
       false,
       false,
       0,
@@ -131,7 +134,7 @@ BasicGame.Game = class Game {
     });
     // start spawning 5 seconds into the game
     this.nextShooterAt = this.time.now + Phaser.Timer.SECOND * 5;
-    this.shooterDelay = BasicGame.SPAWN_SHOOTER_DELAY;
+    this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
 
     // Boss setup
     this.bossPool = this.add.group();
@@ -144,7 +147,7 @@ BasicGame.Game = class Game {
     this.bossPool.setAll("checkWorldBounds", true);
     this.bossPool.setAll(
       "reward",
-      BasicGame.BOSS_REWARD,
+      GlobalConstants.BOSS_REWARD,
       false,
       false,
       0,
@@ -152,7 +155,7 @@ BasicGame.Game = class Game {
     );
     this.bossPool.setAll(
       "dropRate",
-      BasicGame.BOSS_DROP_RATE,
+      GlobalConstants.BOSS_DROP_RATE,
       false,
       false,
       0,
@@ -199,7 +202,7 @@ BasicGame.Game = class Game {
     this.bulletPool.setAll("checkWorldBounds", true);
 
     this.nextShotAt = 0;
-    this.shotDelay = BasicGame.SHOT_DELAY;
+    this.shotDelay = GlobalConstants.SHOT_DELAY;
   }
 
   setupExplosions() {
@@ -223,7 +226,7 @@ BasicGame.Game = class Game {
       { font: "20px monospace", fill: "#fff", align: "center" }
     );
     this.instructions.anchor.setTo(0.5, 0.5); // Establece el punto ded anclaje en el centro del texto
-    this.instExpire = this.time.now + BasicGame.INSTRUCTION_EXPIRE;
+    this.instExpire = this.time.now + GlobalConstants.INSTRUCTION_EXPIRE;
     //Game score text
     this.score = 0;
     this.scoreText = this.add.text(
@@ -250,7 +253,7 @@ BasicGame.Game = class Game {
     this.powerUpPool.setAll("checkWorldBounds", true);
     this.powerUpPool.setAll(
       "reward",
-      BasicGame.POWERUP_REWARD,
+      GlobalConstants.POWERUP_REWARD,
       false,
       false,
       0,
@@ -260,8 +263,8 @@ BasicGame.Game = class Game {
     this.lives = this.add.group();
     // calculate location of first life icon
     var firstLifeIconX =
-      this.game.width - 10 - BasicGame.PLAYER_EXTRA_LIVES * 30;
-    for (var i = 0; i < BasicGame.PLAYER_EXTRA_LIVES; i++) {
+      this.game.width - 10 - GlobalConstants.PLAYER_EXTRA_LIVES * 30;
+    for (var i = 0; i < GlobalConstants.PLAYER_EXTRA_LIVES; i++) {
       var life = this.lives.create(firstLifeIconX + 30 * i, 30, "player");
       life.scale.setTo(0.5, 0.5);
       life.anchor.setTo(0.5, 0.5);
@@ -286,7 +289,7 @@ BasicGame.Game = class Game {
       }
       bullet = this.bulletPool.getFirstExists(false);
       bullet.reset(this.player.x, this.player.y - 20);
-      bullet.body.velocity.y = -BasicGame.BULLET_VELOCITY;
+      bullet.body.velocity.y = -GlobalConstants.BULLET_VELOCITY;
     } else {
       // chequea que el poder del arma no quede por debajo de la cantidad de balas
       if (this.bulletPool.countDead() < this.weaponLevel * 2) {
@@ -300,7 +303,7 @@ BasicGame.Game = class Game {
         // the left bullets spread from -95 degrees to -135 degrees
         this.physics.arcade.velocityFromAngle(
           -95 - i * 10,
-          BasicGame.BULLET_VELOCITY,
+          GlobalConstants.BULLET_VELOCITY,
           bullet.body.velocity
         );
 
@@ -310,7 +313,7 @@ BasicGame.Game = class Game {
         // the right bullets spread from -85 degrees to -45
         this.physics.arcade.velocityFromAngle(
           -85 + i * 10,
-          BasicGame.BULLET_VELOCITY,
+          GlobalConstants.BULLET_VELOCITY,
           bullet.body.velocity
         );
       }
@@ -328,9 +331,9 @@ BasicGame.Game = class Game {
         this.physics.arcade.moveToObject(
           bullet,
           this.player,
-          BasicGame.ENEMY_BULLET_VELOCITY
+          GlobalConstants.ENEMY_BULLET_VELOCITY
         );
-        enemy.nextShotAt = this.time.now + BasicGame.SHOOTER_SHOT_DELAY;
+        enemy.nextShotAt = this.time.now + GlobalConstants.SHOOTER_SHOT_DELAY;
         this.enemyFireSFX.play();
       }
     }, this);
@@ -342,7 +345,7 @@ BasicGame.Game = class Game {
       this.boss.nextShotAt < this.time.now &&
       this.enemyBulletPool.countDead() >= 10
     ) {
-      this.boss.nextShotAt = this.time.now + BasicGame.BOSS_SHOT_DELAY;
+      this.boss.nextShotAt = this.time.now + GlobalConstants.BOSS_SHOT_DELAY;
       this.enemyFireSFX.play();
       for (var i = 0; i < 5; i++) {
         // process 2 bullets at a time
@@ -351,17 +354,17 @@ BasicGame.Game = class Game {
         var rightBullet = this.enemyBulletPool.getFirstExists(false);
         rightBullet.reset(this.boss.x + 10 + i * 10, this.boss.y + 20);
 
-        if (this.boss.health > BasicGame.BOSS_HEALTH / 2) {
+        if (this.boss.health > GlobalConstants.BOSS_HEALTH / 2) {
           // aim directly at the player
           this.physics.arcade.moveToObject(
             leftBullet,
             this.player,
-            BasicGame.ENEMY_BULLET_VELOCITY
+            GlobalConstants.ENEMY_BULLET_VELOCITY
           );
           this.physics.arcade.moveToObject(
             rightBullet,
             this.player,
-            BasicGame.ENEMY_BULLET_VELOCITY
+            GlobalConstants.ENEMY_BULLET_VELOCITY
           );
         } else {
           // aim slightly off center of the player
@@ -369,13 +372,13 @@ BasicGame.Game = class Game {
             leftBullet,
             this.player.x - i * 100,
             this.player.y,
-            BasicGame.ENEMY_BULLET_VELOCITY
+            GlobalConstants.ENEMY_BULLET_VELOCITY
           );
           this.physics.arcade.moveToXY(
             rightBullet,
             this.player.x + i * 100,
             this.player.y,
-            BasicGame.ENEMY_BULLET_VELOCITY
+            GlobalConstants.ENEMY_BULLET_VELOCITY
           );
         }
       }
@@ -459,12 +462,12 @@ BasicGame.Game = class Game {
       enemy.reset(
         this.rnd.integerInRange(20, this.game.width - 20),
         0,
-        BasicGame.ENEMY_HEALTH
+        GlobalConstants.ENEMY_HEALTH
       );
       // also randomize the speed
       enemy.body.velocity.y = this.rnd.integerInRange(
-        BasicGame.ENEMY_MIN_Y_VELOCITY,
-        BasicGame.ENEMY_MAX_Y_VELOCITY
+        GlobalConstants.ENEMY_MIN_Y_VELOCITY,
+        GlobalConstants.ENEMY_MAX_Y_VELOCITY
       );
       enemy.play("fly");
     }
@@ -480,7 +483,7 @@ BasicGame.Game = class Game {
       shooter.reset(
         this.rnd.integerInRange(20, this.game.width - 20),
         0,
-        BasicGame.SHOOTER_HEALTH
+        GlobalConstants.SHOOTER_HEALTH
       );
       // choose a random target location at the bottom
       var target = this.rnd.integerInRange(20, this.game.width - 20);
@@ -491,8 +494,8 @@ BasicGame.Game = class Game {
           target,
           this.game.height,
           this.rnd.integerInRange(
-            BasicGame.SHOOTER_MIN_VELOCITY,
-            BasicGame.SHOOTER_MAX_VELOCITY
+            GlobalConstants.SHOOTER_MIN_VELOCITY,
+            GlobalConstants.SHOOTER_MAX_VELOCITY
           )
         ) -
         Math.PI / 2; //--> Esto es importante: Phser asume que los sprites tienen
@@ -566,7 +569,7 @@ BasicGame.Game = class Game {
 
   enemyHit(bullet, enemy) {
     bullet.kill();
-    this.damageEnemy(enemy, BasicGame.BULLET_DAMAGE);
+    this.damageEnemy(enemy, GlobalConstants.BULLET_DAMAGE);
   }
 
   playerHit(player, enemy) {
@@ -576,13 +579,13 @@ BasicGame.Game = class Game {
     }
     this.playerExplosionSFX.play();
     // crashing into an enemy only deals 5 damage
-    this.damageEnemy(enemy, BasicGame.CRASH_DAMAGE);
+    this.damageEnemy(enemy, GlobalConstants.CRASH_DAMAGE);
     // si al jugador le quedan vidas, ghostea, si no, muere
     var life = this.lives.getFirstAlive();
     if (life !== null) {
       life.kill();
       this.weaponLevel = 0;
-      this.ghostUntil = this.time.now + BasicGame.PLAYER_GHOST_TIME;
+      this.ghostUntil = this.time.now + GlobalConstants.PLAYER_GHOST_TIME;
       this.player.play("ghost");
     } else {
       this.explode(player);
@@ -646,9 +649,9 @@ BasicGame.Game = class Game {
 
   spawnBoss() {
     this.bossApproaching = true;
-    this.boss.reset(this.game.width / 2, 0, BasicGame.BOSS_HEALTH);
+    this.boss.reset(this.game.width / 2, 0, GlobalConstants.BOSS_HEALTH);
     this.physics.enable(this.boss, Phaser.Physics.ARCADE);
-    this.boss.body.velocity.y = BasicGame.BOSS_Y_VELOCITY;
+    this.boss.body.velocity.y = GlobalConstants.BOSS_Y_VELOCITY;
     this.boss.play("fly");
   }
 
@@ -660,7 +663,7 @@ BasicGame.Game = class Game {
     if (this.rnd.frac() < enemy.dropRate) {
       var powerUp = this.powerUpPool.getFirstExists(false);
       powerUp.reset(enemy.x, enemy.y);
-      powerUp.body.velocity.y = BasicGame.POWERUP_VELOCITY;
+      powerUp.body.velocity.y = GlobalConstants.POWERUP_VELOCITY;
     }
   }
 
@@ -690,7 +693,7 @@ BasicGame.Game = class Game {
       this.boss.nextShotAt = 0;
 
       this.boss.body.velocity.y = 0;
-      this.boss.body.velocity.x = BasicGame.BOSS_X_VELOCITY;
+      this.boss.body.velocity.x = GlobalConstants.BOSS_X_VELOCITY;
       // allow bouncing off world bounds
       this.boss.body.bounce.x = 1;
       this.boss.body.collideWorldBounds = true;
@@ -712,6 +715,6 @@ BasicGame.Game = class Game {
     );
     this.endText.anchor.setTo(0.5, 0);
 
-    this.showReturn = this.time.now + BasicGame.RETURN_MESSAGE_DELAY;
+    this.showReturn = this.time.now + GlobalConstants.RETURN_MESSAGE_DELAY;
   }
-};
+}

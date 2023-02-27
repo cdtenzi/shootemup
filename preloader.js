@@ -1,4 +1,5 @@
-BasicGame.Preloader = class Preloader {
+export default class Preloader {
+  //BasicGame.Preloader = class Preloader {
   background = null;
   preloadBar = null;
 
@@ -84,4 +85,4 @@ BasicGame.Preloader = class Preloader {
 
     //}
   }
-};
+}
