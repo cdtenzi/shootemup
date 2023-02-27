@@ -1,5 +1,5 @@
-import Preloader from "./preloader.js";
-import MainMenu from "./mainMenu.js";
+import Preloader from "./util/preloader.js";
+import MainMenu from "./gameUI/mainMenu.js";
 import Boot from "./boot.js";
 import Game from "./game.js";
 

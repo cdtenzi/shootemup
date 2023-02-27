@@ -1,17 +1,29 @@
 import { GlobalConstants } from "./util/GlobalConstants.js";
+import { setupBackground, setupAudio } from "./scenes/scene1/scene1.setup.js";
+import {
+  setupEnemies,
+  setupEnemyBullets,
+} from "./scenes/scene1/enemies.setup.js";
+import {
+  setupPlayer,
+  setupPlayerIcons,
+  setupPlayerBullets,
+} from "./player/player.setup.js";
+import { setupText, addToScore } from "./gameUI/textSetup.js";
+import { setupExplosions } from "./effects/explosions.js";
 
 export default class Game {
-  //BasicGame.Game = class Game {
   create() {
-    this.setupBackground();
-    this.setupPlayer();
-    this.setupEnemies();
-    this.setupBullets();
-    this.setupExplosions();
-    this.setupPlayerIcons();
-    this.setupText();
+    setupBackground(this);
+    setupPlayer(this);
+    setupEnemies(this);
+    setupPlayerBullets(this);
+    setupEnemyBullets(this);
+    setupExplosions(this);
+    setupPlayerIcons(this);
+    setupText(this);
 
-    this.setupAudio();
+    setupAudio(this);
 
     this.cursors = this.input.keyboard.createCursorKeys();
   }
@@ -22,253 +34,6 @@ export default class Game {
     this.enemyFire();
     this.processPlayerInput();
     this.processDelayedEffects();
-  }
-
-  setupBackground() {
-    this.sea = this.add.tileSprite(
-      0,
-      0,
-      this.game.width,
-      this.game.height,
-      "sea"
-    );
-    this.sea.autoScroll(0, GlobalConstants.SEA_SCROLL_SPEED);
-  }
-
-  setupAudio() {
-    this.sound.volume = 0.3;
-    this.explosionSFX = this.add.audio("explosion");
-    this.playerExplosionSFX = this.add.audio("playerExplosion");
-    this.enemyFireSFX = this.add.audio("enemyFire");
-    this.playerFireSFX = this.add.audio("playerFire");
-    this.powerUpSFX = this.add.audio("powerUp");
-  }
-
-  setupPlayer() {
-    this.player = this.add.sprite(
-      this.game.width / 2,
-      this.game.height - 50,
-      "player"
-    );
-    this.player.anchor.setTo(0.5, 0.5);
-    this.player.animations.add("fly", [0, 1, 2], 20, true);
-    this.player.animations.add("ghost", [3, 0, 3, 1], 20, true);
-    this.player.play("fly");
-    this.physics.enable(this.player, Phaser.Physics.ARCADE);
-    this.player.speed = this.player.speed = GlobalConstants.PLAYER_SPEED;
-    this.player.body.collideWorldBounds = true;
-    // 20 x 20 pixel hitbox, centered a little bit higher than the center
-    this.player.body.setSize(20, 20, 0, -5);
-    this.weaponLevel = 0;
-  }
-
-  setupEnemies() {
-    //Green enemies:
-    this.enemyPool = this.add.group();
-    this.enemyPool.enableBody = true;
-    this.enemyPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.enemyPool.createMultiple(50, "greenEnemy");
-    this.enemyPool.setAll("anchor.x", 0.5);
-    this.enemyPool.setAll("anchor.y", 0.5);
-    this.enemyPool.setAll("outOfBoundsKill", true);
-    this.enemyPool.setAll("checkWorldBounds", true);
-    this.enemyPool.setAll(
-      "reward",
-      GlobalConstants.ENEMY_REWARD,
-      false,
-      false,
-      0,
-      true
-    );
-    this.enemyPool.setAll(
-      "dropRate",
-      GlobalConstants.ENEMY_DROP_RATE,
-      false,
-      false,
-      0,
-      true
-    );
-    // Set the animation for each sprite
-    this.enemyPool.forEach(function (enemy) {
-      enemy.animations.add("fly", [0, 1, 2], 20, true);
-      enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
-      enemy.events.onAnimationComplete.add(function (e) {
-        e.play("fly");
-      }, this);
-    });
-    this.nextEnemyAt = 0;
-    this.enemyDelay = GlobalConstants.SPAWN_ENEMY_DELAY;
-
-    // Harder white enemies
-    this.shooterPool = this.add.group();
-    this.shooterPool.enableBody = true;
-    this.shooterPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.shooterPool.createMultiple(20, "whiteEnemy");
-    this.shooterPool.setAll("anchor.x", 0.5);
-    this.shooterPool.setAll("anchor.y", 0.5);
-    this.shooterPool.setAll("outOfBoundsKill", true);
-    this.shooterPool.setAll("checkWorldBounds", true);
-    this.shooterPool.setAll(
-      "reward",
-      GlobalConstants.SHOOTER_REWARD,
-      false,
-      false,
-      0,
-      true
-    );
-    this.shooterPool.setAll(
-      "dropRate",
-      GlobalConstants.SHOOTER_DROP_RATE,
-      false,
-      false,
-      0,
-      true
-    );
-    // Set the animation for each sprite
-    this.shooterPool.forEach(function (enemy) {
-      enemy.animations.add("fly", [0, 1, 2], 20, true);
-      enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
-      enemy.events.onAnimationComplete.add(function (e) {
-        e.play("fly");
-      }, this);
-    });
-    // start spawning 5 seconds into the game
-    this.nextShooterAt = this.time.now + Phaser.Timer.SECOND * 5;
-    this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
-
-    // Boss setup
-    this.bossPool = this.add.group();
-    this.bossPool.enableBody = true;
-    this.bossPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.bossPool.createMultiple(1, "boss");
-    this.bossPool.setAll("anchor.x", 0.5);
-    this.bossPool.setAll("anchor.y", 0.5);
-    this.bossPool.setAll("outOfBoundsKill", true);
-    this.bossPool.setAll("checkWorldBounds", true);
-    this.bossPool.setAll(
-      "reward",
-      GlobalConstants.BOSS_REWARD,
-      false,
-      false,
-      0,
-      true
-    );
-    this.bossPool.setAll(
-      "dropRate",
-      GlobalConstants.BOSS_DROP_RATE,
-      false,
-      false,
-      0,
-      true
-    );
-    // Set the animation for each sprite
-    this.bossPool.forEach(function (enemy) {
-      enemy.animations.add("fly", [0, 1, 2], 20, true);
-      enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
-      enemy.events.onAnimationComplete.add(function (e) {
-        e.play("fly");
-      }, this);
-    });
-    this.boss = this.bossPool.getTop();
-    this.bossApproaching = false;
-  }
-
-  setupBullets() {
-    this.enemyBulletPool = this.add.group();
-    this.enemyBulletPool.enableBody = true;
-    this.enemyBulletPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.enemyBulletPool.createMultiple(100, "enemyBullet");
-    this.enemyBulletPool.setAll("anchor.x", 0.5);
-    this.enemyBulletPool.setAll("anchor.y", 0.5);
-    this.enemyBulletPool.setAll("outOfBoundsKill", true);
-    this.enemyBulletPool.setAll("checkWorldBounds", true);
-    this.enemyBulletPool.setAll("reward", 0, false, false, 0, true);
-
-    // Add an empty sprite group into our game
-    this.bulletPool = this.add.group();
-    // Enable physics to the whole sprite group
-    this.bulletPool.enableBody = true;
-    this.bulletPool.physicsBodyType = Phaser.Physics.ARCADE;
-    // Add 100 'bullet' sprites in the group.
-    // By default this uses the first frame of the sprite sheet and
-    //   sets the initial state as non-existing (i.e. killed/dead)
-    this.bulletPool.createMultiple(100, "bullet");
-    // Sets anchors of all sprites
-    this.bulletPool.setAll("anchor.x", 0.5);
-    this.bulletPool.setAll("anchor.y", 0.5);
-
-    // Automatically kill the bullet sprites when they go out of bounds
-    this.bulletPool.setAll("outOfBoundsKill", true);
-    this.bulletPool.setAll("checkWorldBounds", true);
-
-    this.nextShotAt = 0;
-    this.shotDelay = GlobalConstants.SHOT_DELAY;
-  }
-
-  setupExplosions() {
-    this.explosionPool = this.add.group();
-    this.explosionPool.enableBody = true;
-    this.explosionPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.explosionPool.createMultiple(100, "explosion");
-    this.explosionPool.setAll("anchor.x", 0.5);
-    this.explosionPool.setAll("anchor.y", 0.5);
-    this.explosionPool.forEach(function (explosion) {
-      explosion.animations.add("boom");
-    });
-  }
-
-  setupText() {
-    this.instructions = this.add.text(
-      this.game.width / 2,
-      this.game.height - 100,
-      "Use Arrow Keys to Move, Press Z to Fire\n" +
-        "Tapping/clicking does both",
-      { font: "20px monospace", fill: "#fff", align: "center" }
-    );
-    this.instructions.anchor.setTo(0.5, 0.5); // Establece el punto ded anclaje en el centro del texto
-    this.instExpire = this.time.now + GlobalConstants.INSTRUCTION_EXPIRE;
-    //Game score text
-    this.score = 0;
-    this.scoreText = this.add.text(
-      this.game.width / 2,
-      30,
-      "Reward: " + this.score,
-      {
-        font: "20px monospace",
-        fill: "#fff",
-        align: "center",
-      }
-    );
-    this.scoreText.anchor.setTo(0.5, 0.5);
-  }
-
-  setupPlayerIcons() {
-    this.powerUpPool = this.add.group();
-    this.powerUpPool.enableBody = true;
-    this.powerUpPool.physicsBodyType = Phaser.Physics.ARCADE;
-    this.powerUpPool.createMultiple(5, "powerup1");
-    this.powerUpPool.setAll("anchor.x", 0.5);
-    this.powerUpPool.setAll("anchor.y", 0.5);
-    this.powerUpPool.setAll("outOfBoundsKill", true);
-    this.powerUpPool.setAll("checkWorldBounds", true);
-    this.powerUpPool.setAll(
-      "reward",
-      GlobalConstants.POWERUP_REWARD,
-      false,
-      false,
-      0,
-      true
-    );
-
-    this.lives = this.add.group();
-    // calculate location of first life icon
-    var firstLifeIconX =
-      this.game.width - 10 - GlobalConstants.PLAYER_EXTRA_LIVES * 30;
-    for (var i = 0; i < GlobalConstants.PLAYER_EXTRA_LIVES; i++) {
-      var life = this.lives.create(firstLifeIconX + 30 * i, 30, "player");
-      life.scale.setTo(0.5, 0.5);
-      life.anchor.setTo(0.5, 0.5);
-    }
   }
 
   fire() {
@@ -595,7 +360,7 @@ export default class Game {
   }
 
   playerPowerUp(player, powerUp) {
-    this.addToScore(powerUp.reward);
+    addToScore(this, powerUp.reward);
     powerUp.kill();
     this.powerUpSFX.play();
 
@@ -625,7 +390,7 @@ export default class Game {
       this.explode(enemy);
       this.explosionSFX.play();
       this.spawnPowerUp(enemy);
-      this.addToScore(enemy.reward);
+      addToScore(this, enemy.reward);
       // We check the sprite key (e.g. 'greenEnemy') to see if the sprite is a boss
       // For full games, it would be better to set flags on the sprites themselves
       if (enemy.key === "boss") {
@@ -635,15 +400,6 @@ export default class Game {
         this.enemyBulletPool.destroy();
         this.displayEnd(true);
       }
-    }
-  }
-
-  addToScore(score) {
-    this.score += score;
-    this.scoreText.text = this.score;
-    // this approach prevents the boss from spawning again upon winning
-    if (this.score >= 20000 && this.bossPool.countDead() == 1) {
-      this.spawnBoss();
     }
   }
 
