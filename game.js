@@ -1,11 +1,5 @@
-BasicGame.Game = function (game) {};
-
-BasicGame.Game.prototype = {
-  preload: function () {
-    this.load.image("titlepage", "assets/titlepage.png");
-  },
-
-  create: function () {
+BasicGame.Game = class Game {
+  create() {
     this.setupBackground();
     this.setupPlayer();
     this.setupEnemies();
@@ -17,17 +11,17 @@ BasicGame.Game.prototype = {
     this.setupAudio();
 
     this.cursors = this.input.keyboard.createCursorKeys();
-  },
+  }
 
-  update: function () {
+  update() {
     this.checkCollisions();
     this.spawnEnemies();
     this.enemyFire();
     this.processPlayerInput();
     this.processDelayedEffects();
-  },
+  }
 
-  setupBackground: function () {
+  setupBackground() {
     this.sea = this.add.tileSprite(
       0,
       0,
@@ -36,16 +30,18 @@ BasicGame.Game.prototype = {
       "sea"
     );
     this.sea.autoScroll(0, BasicGame.SEA_SCROLL_SPEED);
-  },
-  setupAudio: function () {
+  }
+
+  setupAudio() {
     this.sound.volume = 0.3;
     this.explosionSFX = this.add.audio("explosion");
     this.playerExplosionSFX = this.add.audio("playerExplosion");
     this.enemyFireSFX = this.add.audio("enemyFire");
     this.playerFireSFX = this.add.audio("playerFire");
     this.powerUpSFX = this.add.audio("powerUp");
-  },
-  setupPlayer: function () {
+  }
+
+  setupPlayer() {
     this.player = this.add.sprite(
       this.game.width / 2,
       this.game.height - 50,
@@ -61,9 +57,9 @@ BasicGame.Game.prototype = {
     // 20 x 20 pixel hitbox, centered a little bit higher than the center
     this.player.body.setSize(20, 20, 0, -5);
     this.weaponLevel = 0;
-  },
+  }
 
-  setupEnemies: function () {
+  setupEnemies() {
     //Green enemies:
     this.enemyPool = this.add.group();
     this.enemyPool.enableBody = true;
@@ -172,9 +168,9 @@ BasicGame.Game.prototype = {
     });
     this.boss = this.bossPool.getTop();
     this.bossApproaching = false;
-  },
+  }
 
-  setupBullets: function () {
+  setupBullets() {
     this.enemyBulletPool = this.add.group();
     this.enemyBulletPool.enableBody = true;
     this.enemyBulletPool.physicsBodyType = Phaser.Physics.ARCADE;
@@ -204,9 +200,9 @@ BasicGame.Game.prototype = {
 
     this.nextShotAt = 0;
     this.shotDelay = BasicGame.SHOT_DELAY;
-  },
+  }
 
-  setupExplosions: function () {
+  setupExplosions() {
     this.explosionPool = this.add.group();
     this.explosionPool.enableBody = true;
     this.explosionPool.physicsBodyType = Phaser.Physics.ARCADE;
@@ -216,9 +212,9 @@ BasicGame.Game.prototype = {
     this.explosionPool.forEach(function (explosion) {
       explosion.animations.add("boom");
     });
-  },
+  }
 
-  setupText: function () {
+  setupText() {
     this.instructions = this.add.text(
       this.game.width / 2,
       this.game.height - 100,
@@ -241,9 +237,9 @@ BasicGame.Game.prototype = {
       }
     );
     this.scoreText.anchor.setTo(0.5, 0.5);
-  },
+  }
 
-  setupPlayerIcons: function () {
+  setupPlayerIcons() {
     this.powerUpPool = this.add.group();
     this.powerUpPool.enableBody = true;
     this.powerUpPool.physicsBodyType = Phaser.Physics.ARCADE;
@@ -270,9 +266,9 @@ BasicGame.Game.prototype = {
       life.scale.setTo(0.5, 0.5);
       life.anchor.setTo(0.5, 0.5);
     }
-  },
+  }
 
-  fire: function () {
+  fire() {
     // chequeamos el ratio de disparo y si pasaron más de los milisegundos
     // esperados para emitir la siguiente bala, si no, cortamos la ejecución
     if (this.nextShotAt > this.time.now || !this.player.alive) {
@@ -319,9 +315,9 @@ BasicGame.Game.prototype = {
         );
       }
     }
-  },
+  }
 
-  enemyFire: function () {
+  enemyFire() {
     this.shooterPool.forEachAlive(function (enemy) {
       if (
         this.time.now > enemy.nextShotAt &&
@@ -384,12 +380,12 @@ BasicGame.Game.prototype = {
         }
       }
     }
-  },
+  }
 
   //
   // update()- related functions
   //
-  checkCollisions: function () {
+  checkCollisions() {
     this.physics.arcade.overlap(
       this.bulletPool,
       this.enemyPool,
@@ -453,9 +449,9 @@ BasicGame.Game.prototype = {
         this
       );
     }
-  },
+  }
 
-  spawnEnemies: function () {
+  spawnEnemies() {
     if (this.nextEnemyAt < this.time.now && this.enemyPool.countDead() > 0) {
       this.nextEnemyAt = this.time.now + this.enemyDelay;
       var enemy = this.enemyPool.getFirstExists(false);
@@ -509,9 +505,9 @@ BasicGame.Game.prototype = {
       // each shooter has their own shot timer
       shooter.nextShotAt = 0;
     }
-  },
+  }
 
-  processPlayerInput: function () {
+  processPlayerInput() {
     this.player.body.velocity.x = 0;
     this.player.body.velocity.y = 0;
 
@@ -544,14 +540,15 @@ BasicGame.Game.prototype = {
         this.fire();
       }
     }
-  },
+  }
 
-  processDelayedEffects: function () {
+  processDelayedEffects() {
     if (this.instructions.exists && this.time.now > this.instExpire) {
       this.instructions.destroy();
     }
-  },
-  quitGame: function (pointer) {
+  }
+
+  quitGame(pointer) {
     //  Here you should destroy anything you no longer need.
     //  Stop music, delete sprites, purge caches, free resources, all that good stuff.
     this.sea.destroy();
@@ -565,14 +562,14 @@ BasicGame.Game.prototype = {
     this.returnText.destroy();
     //  Then let's go back to the main menu.
     this.state.start("MainMenu");
-  },
+  }
 
-  enemyHit: function (bullet, enemy) {
+  enemyHit(bullet, enemy) {
     bullet.kill();
     this.damageEnemy(enemy, BasicGame.BULLET_DAMAGE);
-  },
+  }
 
-  playerHit: function (player, enemy) {
+  playerHit(player, enemy) {
     // check first if this.ghostUntil is not not undefined or null
     if (this.ghostUntil && this.ghostUntil > this.time.now) {
       return;
@@ -592,9 +589,9 @@ BasicGame.Game.prototype = {
       player.kill();
       this.displayEnd(false);
     }
-  },
+  }
 
-  playerPowerUp: function (player, powerUp) {
+  playerPowerUp(player, powerUp) {
     this.addToScore(powerUp.reward);
     powerUp.kill();
     this.powerUpSFX.play();
@@ -602,9 +599,9 @@ BasicGame.Game.prototype = {
     if (this.weaponLevel < 5) {
       this.weaponLevel++;
     }
-  },
+  }
 
-  explode: function (sprite) {
+  explode(sprite) {
     if (this.explosionPool.countDead() === 0) {
       return;
     }
@@ -614,9 +611,9 @@ BasicGame.Game.prototype = {
     // add the original sprite's velocity to the explosion
     explosion.body.velocity.x = sprite.body.velocity.x;
     explosion.body.velocity.y = sprite.body.velocity.y;
-  },
+  }
 
-  damageEnemy: function (enemy, damage) {
+  damageEnemy(enemy, damage) {
     //Using damage() automatically kill()s the sprite once its health is reduced to zero.
     enemy.damage(damage);
     if (enemy.alive) {
@@ -636,26 +633,26 @@ BasicGame.Game.prototype = {
         this.displayEnd(true);
       }
     }
-  },
+  }
 
-  addToScore: function (score) {
+  addToScore(score) {
     this.score += score;
     this.scoreText.text = this.score;
     // this approach prevents the boss from spawning again upon winning
     if (this.score >= 20000 && this.bossPool.countDead() == 1) {
       this.spawnBoss();
     }
-  },
+  }
 
-  spawnBoss: function () {
+  spawnBoss() {
     this.bossApproaching = true;
     this.boss.reset(this.game.width / 2, 0, BasicGame.BOSS_HEALTH);
     this.physics.enable(this.boss, Phaser.Physics.ARCADE);
     this.boss.body.velocity.y = BasicGame.BOSS_Y_VELOCITY;
     this.boss.play("fly");
-  },
+  }
 
-  spawnPowerUp: function (enemy) {
+  spawnPowerUp(enemy) {
     if (this.powerUpPool.countDead() === 0 || this.weaponLevel === 5) {
       return;
     }
@@ -665,9 +662,9 @@ BasicGame.Game.prototype = {
       powerUp.reset(enemy.x, enemy.y);
       powerUp.body.velocity.y = BasicGame.POWERUP_VELOCITY;
     }
-  },
+  }
 
-  processDelayedEffects: function () {
+  processDelayedEffects() {
     if (this.instructions.exists && this.time.now > this.instExpire) {
       this.instructions.destroy();
     }
@@ -698,9 +695,9 @@ BasicGame.Game.prototype = {
       this.boss.body.bounce.x = 1;
       this.boss.body.collideWorldBounds = true;
     }
-  },
+  }
 
-  displayEnd: function (win) {
+  displayEnd(win) {
     // you can't win and lose at the same time
     if (this.endText && this.endText.exists) {
       return;
@@ -716,5 +713,5 @@ BasicGame.Game.prototype = {
     this.endText.anchor.setTo(0.5, 0);
 
     this.showReturn = this.time.now + BasicGame.RETURN_MESSAGE_DELAY;
-  },
+  }
 };

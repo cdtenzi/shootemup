@@ -1,12 +1,13 @@
-BasicGame.Preloader = function (game) {
-  this.background = null;
-  this.preloadBar = null;
+BasicGame.Preloader = class Preloader {
+  background = null;
+  preloadBar = null;
 
-  //this.ready = false;
-};
+  constructor(game) {
+    this.background = null;
+    this.preloadBar = null;
+  }
 
-BasicGame.Preloader.prototype = {
-  preload: function () {
+  preload() {
     //  Show the loading progress bar asset we loaded in boot.js
     this.stage.backgroundColor = "#2d2d2d";
 
@@ -57,14 +58,14 @@ BasicGame.Preloader.prototype = {
     this.load.audio("powerUp", ["assets/powerup.ogg", "assets/powerup.wav"]);
     //this.load.audio('titleMusic', ['audio/main_menu.mp3']);
     //  + lots of other required assets here
-  },
+  }
 
-  create: function () {
+  create() {
     //  Once the load has finished we disable the crop because we're going to sit in the update loop for a short while as the music decodes
     this.preloadBar.cropEnabled = false;
-  },
+  }
 
-  update: function () {
+  update() {
     //  You don't actually need to do this, but I find it gives a much smoother game experience.
     //  Basically it will wait for our audio file to be decoded before proceeding to the MainMenu.
     //  You can jump right into the menu if you want and still play the music, but you'll have a few
@@ -82,5 +83,5 @@ BasicGame.Preloader.prototype = {
     //this.state.start("Game");
 
     //}
-  },
+  }
 };

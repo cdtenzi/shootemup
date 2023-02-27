@@ -41,10 +41,8 @@ var BasicGame = {
   RETURN_MESSAGE_DELAY: Phaser.Timer.SECOND * 2,
 };
 
-BasicGame.Boot = function (game) {};
-
-BasicGame.Boot.prototype = {
-  init: function () {
+BasicGame.Boot = class Boot {
+  init() {
     //  Unless you specifically know your game needs to support multi-touch I would recommend setting this to 1
     this.input.maxPointers = 1;
 
@@ -57,21 +55,21 @@ BasicGame.Boot.prototype = {
       //  Same goes for mobile settings.
       //  In this case we're saying "scale the game, no lower than 480x260 and no higher than 1024x768"
       this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-      this.scale.setMinMax(480, 260, 1024, 768);
-      this.scale.forceLandscape = true;
+      this.scale.setMinMax(260, 480, 768, 1024);
+      //this.scale.forceLandscape = true;
     }
     this.scale.pageAlignHorizontally = true;
     this.scale.pageAlignVertically = true;
-  },
+  }
 
-  preload: function () {
+  preload() {
     //  Here we load the assets required for our preloader (in this case a loading bar)
     this.load.image("preloaderBar", "assets/preloader-bar.png");
-  },
+  }
 
-  create: function () {
+  create() {
     //  By this point the preloader assets have loaded to the cache, we've set the game settings
     //  So now let's start the real preloader going
     this.state.start("Preloader");
-  },
+  }
 };
