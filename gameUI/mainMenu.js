@@ -1,5 +1,4 @@
 export default class MainMenu {
-  //BasicGame.MainMenu = class MainMenu {
   music = null;
   playButton = null;
 
@@ -43,7 +42,6 @@ export default class MainMenu {
     ) {
       this.startGame();
     }
-    //  Do some nice funky main menu effect here
   }
 
   startGame(pointer) {
