@@ -1,16 +1,13 @@
-import { GlobalConstants } from "./util/GlobalConstants.js";
-import { setupBackground, setupAudio } from "./scenes/scene1/scene1.setup.js";
-import {
-  setupEnemies,
-  setupEnemyBullets,
-} from "./scenes/scene1/enemies.setup.js";
+import { GlobalConstants } from "../../util/GlobalConstants.js";
+import { setupBackground, setupAudio } from "./scene1.setup.js";
+import { setupEnemies, setupEnemyBullets } from "./enemies.setup.js";
 import {
   setupPlayer,
   setupPlayerIcons,
   setupPlayerBullets,
-} from "./player/player.setup.js";
-import { setupText, addToScore } from "./gameUI/textSetup.js";
-import { setupExplosions } from "./effects/explosions.js";
+} from "../../player/player.setup.js";
+import { setupText, addToScore } from "../../gameUI/textSetup.js";
+import { setupExplosions } from "../../effects/explosions.js";
 
 export default class Game {
   create() {
