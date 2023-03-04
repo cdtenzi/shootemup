@@ -8,7 +8,7 @@ export function setupBackground(scene) {
     scene.game.height,
     "sea"
   );
-  scene.sea.autoScroll(0, GlobalConstants.SEA_SCROLL_SPEED);
+  scene.sea.scrollFactorY = GlobalConstants.SEA_SCROLL_SPEED; // autoScroll(0, GlobalConstants.SEA_SCROLL_SPEED);
 }
 
 export function setupAudio(scene) {

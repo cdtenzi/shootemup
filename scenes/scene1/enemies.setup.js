@@ -28,10 +28,10 @@ export function setupEnemies(scene) {
   );
   // Set the animation for each sprite
   scene.enemyPool.forEach(function (enemy) {
-    enemy.animations.add("fly", [0, 1, 2], 20, true);
-    enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
+    enemy.animations.add("fly2", [0, 1, 2], 20, true);
+    enemy.animations.add("hit2", [3, 1, 3, 2], 20, false);
     enemy.events.onAnimationComplete.add(function (e) {
-      e.play("fly");
+      e.play("fly2");
     }, scene);
   });
   scene.nextEnemyAt = 0;
@@ -64,10 +64,10 @@ export function setupEnemies(scene) {
   );
   // Set the animation for each sprite
   scene.shooterPool.forEach(function (enemy) {
-    enemy.animations.add("fly", [0, 1, 2], 20, true);
-    enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
+    enemy.animations.add("fly3", [0, 1, 2], 20, true);
+    enemy.animations.add("hit3", [3, 1, 3, 2], 20, false);
     enemy.events.onAnimationComplete.add(function (e) {
-      e.play("fly");
+      e.play("fly3");
     }, scene);
   });
   // start spawning 5 seconds into the game
@@ -101,10 +101,10 @@ export function setupEnemies(scene) {
   );
   // Set the animation for each sprite
   scene.bossPool.forEach(function (enemy) {
-    enemy.animations.add("fly", [0, 1, 2], 20, true);
-    enemy.animations.add("hit", [3, 1, 3, 2], 20, false);
+    enemy.animations.add("fly4", [0, 1, 2], 20, true);
+    enemy.animations.add("hit4", [3, 1, 3, 2], 20, false);
     enemy.events.onAnimationComplete.add(function (e) {
-      e.play("fly");
+      e.play("fly4");
     }, scene);
   });
   scene.boss = scene.bossPool.getTop();

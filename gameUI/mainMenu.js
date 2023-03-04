@@ -1,8 +1,9 @@
-export default class MainMenu {
+export default class MainMenu extends Phaser.Scene {
   music = null;
   playButton = null;
 
-  constructor() {
+  constructor(sceneConfig) {
+    super(sceneConfig);
     this.music = null;
     this.playButton = null;
   }

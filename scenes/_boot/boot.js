@@ -1,5 +1,9 @@
-export default class Boot {
-  //BasicGame.Boot = class Boot {
+export default class Boot extends Phaser.Scene {
+  constructor(sceneConfig) {
+    super(sceneConfig);
+    this.key = "Boot";
+  }
+
   init() {
     //  Unless you specifically know your game needs to support multi-touch I would recommend setting this to 1
     this.input.maxPointers = 1;
@@ -9,7 +13,9 @@ export default class Boot {
 
     if (this.game.device.desktop) {
       //  If you have any desktop specific settings, they can go in here
+      console.log("running on desktop");
     } else {
+      console.log("not running on desktop...");
       //  Same goes for mobile settings.
       //  In this case we're saying "scale the game, no lower than 480x260 and no higher than 1024x768"
       this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;

@@ -11,12 +11,12 @@ export const GlobalConstants = {
   ENEMY_BULLET_VELOCITY: 150,
   POWERUP_VELOCITY: 100,
 
-  SPAWN_ENEMY_DELAY: Phaser.Timer.SECOND,
-  SPAWN_SHOOTER_DELAY: Phaser.Timer.SECOND * 3,
+  SPAWN_ENEMY_DELAY: 1000, // Phaser.Timer.SECOND,
+  SPAWN_SHOOTER_DELAY: 1000 * 3, // Phaser.Timer.SECOND * 3,
 
-  SHOT_DELAY: Phaser.Timer.SECOND * 0.1,
-  SHOOTER_SHOT_DELAY: Phaser.Timer.SECOND * 2,
-  BOSS_SHOT_DELAY: Phaser.Timer.SECOND,
+  SHOT_DELAY: 1000 * 0.1, // Phaser.Timer.SECOND * 0.1,
+  SHOOTER_SHOT_DELAY: 1000 * 2, // Phaser.Timer.SECOND * 2,
+  BOSS_SHOT_DELAY: 1000, // Phaser.Timer.SECOND,
 
   ENEMY_HEALTH: 2,
   SHOOTER_HEALTH: 5,
@@ -35,8 +35,8 @@ export const GlobalConstants = {
   BOSS_DROP_RATE: 0,
 
   PLAYER_EXTRA_LIVES: 3,
-  PLAYER_GHOST_TIME: Phaser.Timer.SECOND * 3,
+  PLAYER_GHOST_TIME: 1000 * 3, // Phaser.Timer.SECOND * 3,
 
-  INSTRUCTION_EXPIRE: Phaser.Timer.SECOND * 10,
-  RETURN_MESSAGE_DELAY: Phaser.Timer.SECOND * 2,
+  INSTRUCTION_EXPIRE: 1000 * 10, // Phaser.Timer.SECOND * 10,
+  RETURN_MESSAGE_DELAY: 1000 * 2, // Phaser.Timer.SECOND * 2,
 };

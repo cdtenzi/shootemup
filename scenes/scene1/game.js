@@ -9,15 +9,29 @@ import {
 import { setupText, addToScore } from "../../gameUI/textSetup.js";
 import { setupExplosions } from "../../effects/explosions.js";
 
-export default class Game {
+// We inherit from Phaser.Scene, converting all our old "States" into Scenes
+export default class Game extends Phaser.Scene {
+  constructor(sceneConfig) {
+    super(sceneConfig);
+    this.key = "Game";
+  }
+
   create() {
+    console.log("setupBackground...");
     setupBackground(this);
+    console.log("setupPlayer...");
     setupPlayer(this);
+    console.log("setupEnemies...");
     setupEnemies(this);
+    console.log("setupPlayerBullets...");
     setupPlayerBullets(this);
+    console.log("setupEnemyBullets...");
     setupEnemyBullets(this);
+    console.log("setupExplosions...");
     setupExplosions(this);
+    console.log("setupPlayerIcons...");
     setupPlayerIcons(this);
+    console.log("setupText...");
     setupText(this);
 
     setupAudio(this);

@@ -1,11 +1,12 @@
-export default class Preloader {
-  //BasicGame.Preloader = class Preloader {
+export default class Preloader extends Phaser.Scene {
   background = null;
   preloadBar = null;
 
-  constructor(game) {
+  constructor(sceneConfig) {
+    super(sceneConfig);
     this.background = null;
     this.preloadBar = null;
+    this.key = "Preloader";
   }
 
   preload() {
@@ -35,11 +36,27 @@ export default class Preloader {
     this.load.image("bullet", "assets/bullet.png");
     this.load.image("enemyBullet", "assets/enemy-bullet.png");
     this.load.image("powerup1", "assets/powerup1.png");
-    this.load.spritesheet("greenEnemy", "assets/enemy.png", 32, 32);
-    this.load.spritesheet("whiteEnemy", "assets/shooting-enemy.png", 32, 32);
-    this.load.spritesheet("boss", "assets/boss.png", 93, 75);
-    this.load.spritesheet("explosion", "assets/explosion.png", 32, 32);
-    this.load.spritesheet("player", "assets/player.png", 64, 64);
+    // {frameWidth: 32,frameHeight: 32} is the main difference with P3
+    this.load.spritesheet("greenEnemy", "assets/enemy.png", {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+    this.load.spritesheet("whiteEnemy", "assets/shooting-enemy.png", {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+    this.load.spritesheet("boss", "assets/boss.png", {
+      frameWidth: 93,
+      frameHeight: 75,
+    });
+    this.load.spritesheet("explosion", "assets/explosion.png", {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+    this.load.spritesheet("player", "assets/player.png", {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
     this.load.audio("explosion", [
       "assets/explosion.ogg",
       "assets/explosion.wav",

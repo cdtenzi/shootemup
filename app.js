@@ -1,6 +1,6 @@
+import Boot from "./scenes/_boot/boot.js";
 import Preloader from "./scenes/_preloader/preloader.js";
 import MainMenu from "./gameUI/mainMenu.js";
-import Boot from "./scenes/_boot/boot.js";
 import Game from "./scenes/scene1/game.js";
 
 window.onload = () => {
@@ -9,14 +9,36 @@ window.onload = () => {
 
   // here we had to set a Canvas because phaser 2.19 was not
   // working with WebGL and I don't know why yet...
-  var game = new Phaser.Game(600, 900, Phaser.CANVAS, "gameContainer");
+  //var game = new Phaser.Game(600, 900, Phaser.CANVAS, "gameContainer");
 
   //  Add the States your game has.
+  /* Phaser 2 works with states, but Phaser 3 works with scenes, which are
+  // also configured in a different way using a configuration object.
   game.state.add("Boot", Boot);
   game.state.add("Preloader", Preloader);
   game.state.add("MainMenu", MainMenu);
   game.state.add("Game", Game);
+  // Let's translate this to a phaser 3 configuration below: */
+  var boot = new Boot();
+  var preloader = new Preloader();
+  var mainMenu = new MainMenu();
+  var scene1 = new Game();
 
-  //  Now start the Boot state.
-  game.state.start("Boot");
+  var config = {
+    type: Phaser.AUTO,
+    width: 600,
+    height: 800,
+    physics: {
+      default: "arcade",
+      arcade: {
+        gravity: { y: 0 },
+        debug: false,
+      },
+    },
+    scene: [boot, preloader, mainMenu, scene1],
+  };
+  var game = new Phaser.Game(config);
+
+  //  Now start the Boot state. (not necesary in Phaser 3)
+  //game.state.start("Boot");
 };
