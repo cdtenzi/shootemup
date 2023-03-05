@@ -1,6 +1,6 @@
 import { GlobalConstants } from "../../util/GlobalConstants.js";
 import { setupBackground, setupAudio } from "./scene1.setup.js";
-import { setupEnemies, setupEnemyBullets } from "./enemies.setup.js";
+import { setupEnemies, setupEnemyBullets } from "./scene1.enemies.setup.js";
 import {
   setupPlayer,
   setupPlayerIcons,
@@ -8,35 +8,74 @@ import {
 } from "../../player/player.setup.js";
 import { setupText, addToScore } from "../../gameUI/textSetup.js";
 import { setupExplosions } from "../../effects/explosions.js";
+import { loadSprites } from "./scene1.preloader.js";
 
 // We inherit from Phaser.Scene, converting all our old "States" into Scenes
 export default class Game extends Phaser.Scene {
+  preloadBar;
+  nextShooterAt;
+
+  player;
+  shooterDelay;
+  enemyPool;
+  shooterPool;
+  bossPool;
+  boss;
+
+  nextShotAt;
+  shotDelay;
+
+  powerUpPool;
+
+  lives;
+
   constructor(sceneConfig) {
     super(sceneConfig);
     this.key = "Game";
+    this.preloadBar = null;
+    this.enemyPool = null;
+    this.shooterPool = null;
+    this.bossPool = null;
+    this.boss = null;
+    this.nextShotAt = 0;
+    this.shotDelay = GlobalConstants.SHOT_DELAY;
+    this.powerUpPool = null;
+    this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
+
+    this.nextShooterAt = window.Date.now() + 5000;
+    this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
+  }
+
+  preload() {
+    console.log("loadig all sprites...");
+    loadSprites(this);
   }
 
   create() {
-    console.log("setupBackground...");
+    console.log("setting up background...");
     setupBackground(this);
-    console.log("setupPlayer...");
+    console.log("setting up player...");
     setupPlayer(this);
-    console.log("setupEnemies...");
+    console.log("setting up enemies...");
     setupEnemies(this);
-    console.log("setupPlayerBullets...");
+    console.log("setting up player bullets...");
     setupPlayerBullets(this);
-    console.log("setupEnemyBullets...");
+    console.log("setting up enemy bullets...");
     setupEnemyBullets(this);
-    console.log("setupExplosions...");
+    console.log("setting up explosions...");
     setupExplosions(this);
-    console.log("setupPlayerIcons...");
+    console.log("setting up player icons...");
     setupPlayerIcons(this);
-    console.log("setupText...");
+    console.log("setting up text...");
     setupText(this);
-
+    console.log("setting up audio...");
     setupAudio(this);
+    console.log("setting up collisions...");
+    this.setUpCollisions();
 
+    console.log("setting up controls...");
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.zKey = this.input.keyboard.addCapture("Z");
   }
 
   update() {
@@ -63,7 +102,7 @@ export default class Game extends Phaser.Scene {
       if (this.bulletPool.countDead() === 0) {
         return;
       }
-      bullet = this.bulletPool.getFirstExists(false);
+      bullet = this.bulletPool.getFirstDead(false);
       bullet.reset(this.player.x, this.player.y - 20);
       bullet.body.velocity.y = -GlobalConstants.BULLET_VELOCITY;
     } else {
@@ -73,7 +112,7 @@ export default class Game extends Phaser.Scene {
       }
       // genera una bala por cada powerUp (nivel/poder del arma)
       for (var i = 0; i < this.weaponLevel; i++) {
-        bullet = this.bulletPool.getFirstExists(false);
+        bullet = this.bulletPool.getFirstDead(false);
         // spawn left bullet slightly left off center
         bullet.reset(this.player.x - (10 + i * 6), this.player.y - 20);
         // the left bullets spread from -95 degrees to -135 degrees
@@ -83,7 +122,7 @@ export default class Game extends Phaser.Scene {
           bullet.body.velocity
         );
 
-        bullet = this.bulletPool.getFirstExists(false);
+        bullet = this.bulletPool.getFirstDead(false);
         // spawn right bullet slightly right off center
         bullet.reset(this.player.x + (10 + i * 6), this.player.y - 20);
         // the right bullets spread from -85 degrees to -45
@@ -97,28 +136,30 @@ export default class Game extends Phaser.Scene {
   }
 
   enemyFire() {
-    this.shooterPool.forEachAlive(function (enemy) {
-      if (
-        this.time.now > enemy.nextShotAt &&
-        this.enemyBulletPool.countDead() > 0
-      ) {
-        var bullet = this.enemyBulletPool.getFirstExists(false);
-        bullet.reset(enemy.x, enemy.y);
-        this.physics.arcade.moveToObject(
-          bullet,
-          this.player,
-          GlobalConstants.ENEMY_BULLET_VELOCITY
-        );
-        enemy.nextShotAt = this.time.now + GlobalConstants.SHOOTER_SHOT_DELAY;
-        this.enemyFireSFX.play();
+    this.shooterPool.children.each(function (enemy) {
+      if (enemy.body.enable) {
+        if (
+          Date.now() > enemy.nextShotAt &&
+          this.enemyBulletPool.countDead() > 0
+        ) {
+          var bullet = this.enemyBulletPool.getFirstDead(false);
+          bullet.reset(enemy.x, enemy.y);
+          this.physics.arcade.moveToObject(
+            bullet,
+            this.player,
+            GlobalConstants.ENEMY_BULLET_VELOCITY
+          );
+          enemy.nextShotAt = this.time.now + GlobalConstants.SHOOTER_SHOT_DELAY;
+          this.enemyFireSFX.play();
+        }
       }
     }, this);
 
     // Disparos del Boss
     if (
       this.bossApproaching === false &&
-      this.boss.alive &&
-      this.boss.nextShotAt < this.time.now &&
+      this.boss.body.enable &&
+      this.boss.nextShotAt < Date.now() &&
       this.enemyBulletPool.countDead() >= 10
     ) {
       this.boss.nextShotAt = this.time.now + GlobalConstants.BOSS_SHOT_DELAY;
@@ -165,21 +206,23 @@ export default class Game extends Phaser.Scene {
   // update()- related functions
   //
   checkCollisions() {
-    this.physics.arcade.overlap(
+    // we translate this to the P3 style, using the physics .overlap:
+    //this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.bulletPool,
       this.enemyPool,
       this.enemyHit,
       null,
       this
     );
-    this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.bulletPool,
       this.shooterPool,
       this.enemyHit,
       null,
       this
     );
-    this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.player,
       this.enemyPool,
       this.playerHit,
@@ -187,7 +230,7 @@ export default class Game extends Phaser.Scene {
       this
     );
     // Jugador vs enemigos
-    this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.player,
       this.shooterPool,
       this.playerHit,
@@ -195,7 +238,7 @@ export default class Game extends Phaser.Scene {
       this
     );
     // jugador vs balas enemigas
-    this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.player,
       this.enemyBulletPool,
       this.playerHit,
@@ -203,7 +246,7 @@ export default class Game extends Phaser.Scene {
       this
     );
     // jugador vs Power Up!
-    this.physics.arcade.overlap(
+    this.physics.add.overlap(
       this.player,
       this.powerUpPool,
       this.playerPowerUp,
@@ -213,14 +256,14 @@ export default class Game extends Phaser.Scene {
 
     //Boss: Solo colisiona una vez que esta en posición
     if (this.bossApproaching === false) {
-      this.physics.arcade.overlap(
+      this.physics.add.overlap(
         this.bulletPool,
         this.bossPool,
         this.enemyHit,
         null,
         this
       );
-      this.physics.arcade.overlap(
+      this.physics.add.overlap(
         this.player,
         this.bossPool,
         this.playerHit,
@@ -230,10 +273,24 @@ export default class Game extends Phaser.Scene {
     }
   }
 
+  setUpCollisions() {
+    this.physics.add.collider(this.bulletPool, this.enemyPool);
+    this.physics.add.collider(this.bulletPool, this.shooterPool);
+    this.physics.add.collider(this.player, this.enemyPool);
+    // Jugador vs enemigos
+    this.physics.add.collider(this.player, this.shooterPool);
+    // jugador vs balas enemigas
+    this.physics.add.collider(this.player, this.enemyBulletPool);
+    // jugador vs Power Up!
+    this.physics.add.collider(this.player, this.powerUpPool);
+    //Boss: Solo colisiona una vez que esta en posición
+    this.physics.add.collider(this.bulletPool, this.bossPool);
+  }
+
   spawnEnemies() {
     if (this.nextEnemyAt < this.time.now && this.enemyPool.countDead() > 0) {
       this.nextEnemyAt = this.time.now + this.enemyDelay;
-      var enemy = this.enemyPool.getFirstExists(false);
+      var enemy = this.enemyPool.getFirstDead(false);
       // spawn at a random location top of the screen
       enemy.reset(
         this.rnd.integerInRange(20, this.game.width - 20),
@@ -251,10 +308,10 @@ export default class Game extends Phaser.Scene {
     // Spawning white enemies that move differently:
     if (
       this.nextShooterAt < this.time.now &&
-      this.shooterPool.countDead() > 0
+      this.shooterPool.countActive < 2
     ) {
       this.nextShooterAt = this.time.now + this.shooterDelay;
-      var shooter = this.shooterPool.getFirstExists(false);
+      var shooter = this.shooterPool.getFirstDead(false);
       // spawn at a random location at the top
       shooter.reset(
         this.rnd.integerInRange(20, this.game.width - 20),
@@ -287,8 +344,9 @@ export default class Game extends Phaser.Scene {
   }
 
   processPlayerInput() {
-    this.player.body.velocity.x = 0;
-    this.player.body.velocity.y = 0;
+    // we get rid of the .body in P3
+    this.player.setVelocityX(0);
+    this.player.setVelocityY(0);
 
     if (this.cursors.left.isDown) {
       this.player.body.velocity.x = -this.player.speed;
@@ -302,15 +360,39 @@ export default class Game extends Phaser.Scene {
       this.player.body.velocity.y = this.player.speed;
     }
 
-    if (
+    this.input.on(
+      "pointermove",
+      function (pointer) {
+        this.player.x += pointer.movementX;
+        this.player.y += pointer.movementY;
+        // Force the sprite to stay on screen
+        this.player.x = Phaser.Math.Wrap(
+          this.player.x,
+          0,
+          this.game.renderer.width
+        );
+        this.player.y = Phaser.Math.Wrap(
+          this.player.y,
+          0,
+          this.game.renderer.height
+        );
+      },
+      this
+    );
+    /* if (
       this.input.activePointer.isDown &&
-      this.physics.arcade.distanceToPointer(this.player) > 15
+      this.physics.distanceToPointer(this.player) > 20
     ) {
-      this.physics.arcade.moveToPointer(this.player, this.player.speed);
-    }
+      this.physics.moveTo(
+        this.player,
+        this.input.activePointer.x,
+        this.input.activePointer.y
+      );
+    }*/
 
     if (
-      this.input.keyboard.isDown(Phaser.Keyboard.Z) ||
+      //this.input.keyboard.isDown(Phaser.Input.Keyboard.KeyCodes.Z) ||
+      this.zKey.isDown ||
       this.input.activePointer.isDown
     ) {
       if (this.returnText && this.returnText.exists) {
@@ -344,7 +426,7 @@ export default class Game extends Phaser.Scene {
   }
 
   enemyHit(bullet, enemy) {
-    bullet.kill();
+    bullet.disableBody(true, true); //bullet.kill() --> there's no kill() in P3
     this.damageEnemy(enemy, GlobalConstants.BULLET_DAMAGE);
   }
 
@@ -359,20 +441,20 @@ export default class Game extends Phaser.Scene {
     // si al jugador le quedan vidas, ghostea, si no, muere
     var life = this.lives.getFirstAlive();
     if (life !== null) {
-      life.kill();
+      life.disableBody(true, true);
       this.weaponLevel = 0;
       this.ghostUntil = this.time.now + GlobalConstants.PLAYER_GHOST_TIME;
       this.player.play("ghost");
     } else {
       this.explode(player);
-      player.kill();
+      player.disableBody(true, true);
       this.displayEnd(false);
     }
   }
 
   playerPowerUp(player, powerUp) {
     addToScore(this, powerUp.reward);
-    powerUp.kill();
+    powerUp.disableBody(true, true);
     this.powerUpSFX.play();
 
     if (this.weaponLevel < 5) {
@@ -480,7 +562,7 @@ export default class Game extends Phaser.Scene {
       msg,
       { font: "72px serif", fill: "#fff" }
     );
-    this.endText.anchor.setTo(0.5, 0);
+    //this.endText.anchor.setTo(0.5, 0);
 
     this.showReturn = this.time.now + GlobalConstants.RETURN_MESSAGE_DELAY;
   }

@@ -17,3 +17,9 @@ That said, you'll see that our code structure has 2 fundamental differences betw
 2. In P3 sprites can only be alive at one scene at a time:
 
    - This means we cannot have a `Preloader` scene that takes care of all the sprites we need in our game, because this collides with our scene1 game.js (our main game scene) where we need to load the sprites. Since we cannot have the sprites living in both the preloader and game scenes, our code will not compile. You can see this in the first commit of this document (part 1 of the P3 migration).
+
+## Converting the Preloader state (into a sprite loading function)
+
+As we explained above, we need our preloader to be part of the scene we are building up. This requires us to covert that preloader class into a function that loads all sprites we need in our game scene (`scene1.game.js`).
+
+For the sake of code readability and maintenance, we are keeping this "preloader code" in its own file: `scene1.preloader.js`.

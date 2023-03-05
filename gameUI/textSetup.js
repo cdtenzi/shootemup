@@ -7,7 +7,8 @@ export function setupText(scene) {
     "Use Arrow Keys to Move, Press Z to Fire\n" + "Tapping/clicking does both",
     { font: "20px monospace", fill: "#fff", align: "center" }
   );
-  scene.instructions.anchor.setTo(0.5, 0.5); // Establece el punto ded anclaje en el centro del texto
+  // not necessary in P3:
+  // scene.instructions.anchor.setTo(0.5, 0.5); // Establece el punto ded anclaje en el centro del texto
   scene.instExpire = scene.time.now + GlobalConstants.INSTRUCTION_EXPIRE;
   //Game score text
   scene.score = 0;
@@ -21,7 +22,7 @@ export function setupText(scene) {
       align: "center",
     }
   );
-  scene.scoreText.anchor.setTo(0.5, 0.5);
+  //scene.scoreText.anchor.setTo(0.5, 0.5);
 }
 
 export function addToScore(scene, score) {
