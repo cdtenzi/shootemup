@@ -29,9 +29,8 @@ export default class Game extends Phaser.Scene {
 
   lives;
 
-  constructor(sceneConfig) {
-    super(sceneConfig);
-    this.key = "Game";
+  constructor() {
+    super("Game");
     this.preloadBar = null;
     this.enemyPool = null;
     this.shooterPool = null;

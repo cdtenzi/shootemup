@@ -18,9 +18,9 @@ window.onload = () => {
   game.state.add("MainMenu", MainMenu);
   game.state.add("Game", Game);
   // Let's translate this to a phaser 3 configuration below: */
-  var boot = new Boot();
-  var mainMenu = new MainMenu();
-  var scene1 = new Game();
+  var boot = new Boot("Boot");
+  var mainMenu = new MainMenu("MainMenu");
+  var scene1 = new Game("Game");
   // As we explained in the documentation, we remove the Preloader scene,
   // because we will preload what we need in each scene inside each scene's code.
   var config = {
@@ -39,5 +39,5 @@ window.onload = () => {
   var game = new Phaser.Game(config);
 
   //  Now start the Boot state. (not necesary in Phaser 3)
-  //game.state.start("Boot");
+  //game.start("Boot"); //game.state.start("Boot");
 };

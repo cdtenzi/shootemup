@@ -1,7 +1,10 @@
 export default class Boot extends Phaser.Scene {
-  constructor(sceneConfig) {
-    super(sceneConfig);
-    this.key = "Boot";
+  // we create a constructor for the scene, giving its parent with the "Boot" key name
+  constructor(keyName) {
+    console.log(keyName);
+    if (!keyName || keyName == "" || keyName === undefined)
+      throw console.error("a Scene key (string) is required");
+    super(keyName);
   }
 
   init() {
@@ -13,13 +16,13 @@ export default class Boot extends Phaser.Scene {
 
     if (this.game.device.desktop) {
       //  If you have any desktop specific settings, they can go in here
-      console.log("running on desktop");
+      console.log("running on desktop?");
     } else {
-      console.log("not running on desktop...");
+      console.log("not running on desktop?");
       //  Same goes for mobile settings.
       //  In this case we're saying "scale the game, no lower than 480x260 and no higher than 1024x768"
-      this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-      this.scale.setMinMax(480, 260, 1024, 768);
+      this.scale.scaleMode = Phaser.Scale.NONE; //this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+      //this.scale.setMinMax(480, 260, 1024, 768);
       //this.scale.forceLandscape = true;
     }
     this.scale.pageAlignHorizontally = true;
@@ -34,6 +37,17 @@ export default class Boot extends Phaser.Scene {
   create() {
     //  By this point the preloader assets have loaded to the cache, we've set the game settings
     //  So now let's start the real preloader going
-    this.state.start("Preloader");
+    this.add.text(
+      this.scale.width / 2 - 60,
+      this.scale.height / 2,
+      "Loading..."
+    );
+    this.add.sprite(
+      this.scale.width / 2 - 15,
+      this.scale.height / 2 + 40,
+      "preloaderBar"
+    );
+    // we start the mainMenu scene in P3 way:
+    this.scene.start("MainMenu");
   }
 }
