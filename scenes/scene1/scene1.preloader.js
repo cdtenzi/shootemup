@@ -33,7 +33,6 @@ export function loadSprites(scene) {
   ); // .anchor.setTo(0.5, 0.5); // comes by default with P3
 
   //  Here we load the rest of the assets our game needs.
-  scene.load.image("titlepage", "assets/titlepage.png");
   scene.load.image("sea", "assets/sea.png");
   scene.load.image("bullet", "assets/bullet.png");
   scene.load.image("enemyBullet", "assets/enemy-bullet.png");

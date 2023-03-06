@@ -1,8 +1,11 @@
 import { GlobalConstants } from "../util/GlobalConstants.js";
 
 export class Player extends Phaser.GameObjects.Sprite {
+  weaponLevel;
+
   constructor(scene, x, y, assetName) {
     super(scene, x, y, assetName);
+    this.scene = scene;
 
     this.anims.create({
       key: "fly",
@@ -10,24 +13,44 @@ export class Player extends Phaser.GameObjects.Sprite {
         start: 0,
         end: 2,
       }),
-      frameRate: 10,
+      frameRate: 30,
       repeat: -1,
     });
+
+    this.weaponLevel = 0;
+    this.speed = GlobalConstants.PLAYER_SPEED;
+
     this.outOfBoundsKill = true;
     this.checkWorldBounds = true;
-    this.on("animationcomplete", (e) => {
-      e.play("fly");
-    });
-
     // 20 x 20 pixel hitbox, is setup differently in P3 (no body)
     this.setSize(20, 20, 0, -5); //scene.player.body.setSize(20, 20, 0, -5);
+
+    //start flying!
+    this.play("fly");
+
+    //enabling physics
+    scene.physics.world.enableBody(this);
   }
 }
 
 export function setupPlayer(scene) {
-  scene.player = scene.physics.add.sprite(
-    new Player(scene, scene.game.width / 2, scene.game.height - 50, "player")
+  var avatar = new Player(
+    scene,
+    scene.scale.width / 2,
+    scene.scale.height - 50,
+    "player"
   );
+  scene.player = scene.add.existing(avatar);
+
+  //scene.player.play("fly");
+  /*
+  scene.player.on("animationcomplete", (e) => {
+    e.play("fly");
+  });
+  */
+  //scene.physics.world.add(scene.player);
+  //scene.player.enableBody(true, true);
+  //scene.player.play("fly");
   /*
   scene.player = scene.add.sprite(
     scene.game.width / 2,
@@ -56,10 +79,8 @@ export function setupPlayer(scene) {
   // enabling physics is different in Phaser3, we add the object to the scene physics:
   // scene.physics.enable(scene.player, Phaser.Physics.ARCADE);
 
-  scene.player.speed = GlobalConstants.PLAYER_SPEED;
+  //scene.player.speed = GlobalConstants.PLAYER_SPEED;
   //scene.player.setCollideWorldBounds(true);
-
-  scene.weaponLevel = 0;
 }
 
 export class PowerUp extends Phaser.GameObjects.Sprite {
@@ -102,7 +123,7 @@ export function setupPlayerIcons(scene) {
   scene.lives = scene.add.group();
   // calculate location of first life icon
   var firstLifeIconX =
-    scene.game.width - 10 - GlobalConstants.PLAYER_EXTRA_LIVES * 30;
+    scene.scale.width - 10 - GlobalConstants.PLAYER_EXTRA_LIVES * 30;
   for (var i = 0; i < GlobalConstants.PLAYER_EXTRA_LIVES; i++) {
     var life = scene.lives.create(firstLifeIconX + 30 * i, 30, "player");
     life.setScale(0.5); // .scale.setTo(0.5, 0.5);
@@ -111,13 +132,17 @@ export function setupPlayerIcons(scene) {
 }
 
 export class PlayerBullet extends Phaser.GameObjects.Sprite {
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
+  constructor(scene) {
+    let x = scene.player.x;
+    let y = scene.player.y;
+    super(scene, x, y, "bullet");
 
-    this.reward = GlobalConstants.ENEMY_REWARD;
-    this.dropRate = GlobalConstants.ENEMY_DROP_RATE;
     this.outOfBoundsKill = true;
     this.checkWorldBounds = true;
+    //add this instance to the scene:
+    this.scene.add.existing(this);
+    //enable physics:
+    scene.physics.world.enableBody(this);
   }
 }
 

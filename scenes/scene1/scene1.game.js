@@ -12,6 +12,7 @@ import { loadSprites } from "./scene1.preloader.js";
 
 // We inherit from Phaser.Scene, converting all our old "States" into Scenes
 export default class Game extends Phaser.Scene {
+  background;
   preloadBar;
   nextShooterAt;
 
@@ -29,8 +30,11 @@ export default class Game extends Phaser.Scene {
 
   lives;
 
+  zKey;
+
   constructor() {
     super("Game");
+    this.background = null;
     this.preloadBar = null;
     this.enemyPool = null;
     this.shooterPool = null;
@@ -40,6 +44,7 @@ export default class Game extends Phaser.Scene {
     this.shotDelay = GlobalConstants.SHOT_DELAY;
     this.powerUpPool = null;
     this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
+    this.zKey = null;
 
     this.nextShooterAt = window.Date.now() + 5000;
     this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
@@ -55,7 +60,8 @@ export default class Game extends Phaser.Scene {
     setupBackground(this);
     console.log("setting up player...");
     setupPlayer(this);
-    console.log("setting up enemies...");
+    /*
+    console.log("setting up enemies...")
     setupEnemies(this);
     console.log("setting up player bullets...");
     setupPlayerBullets(this);
@@ -71,18 +77,21 @@ export default class Game extends Phaser.Scene {
     setupAudio(this);
     console.log("setting up collisions...");
     this.setUpCollisions();
-
+    */
     console.log("setting up controls...");
     this.cursors = this.input.keyboard.createCursorKeys();
     this.zKey = this.input.keyboard.addCapture("Z");
   }
 
   update() {
-    this.checkCollisions();
-    this.spawnEnemies();
-    this.enemyFire();
+    // we make the background automatically scroll down
+    this.background.tilePositionY -= 0.5;
+
+    //this.spawnEnemies();
+    //this.checkCollisions();
+    //this.enemyFire();
     this.processPlayerInput();
-    this.processDelayedEffects();
+    //this.processDelayedEffects();
   }
 
   fire() {
@@ -343,9 +352,8 @@ export default class Game extends Phaser.Scene {
   }
 
   processPlayerInput() {
-    // we get rid of the .body in P3
-    this.player.setVelocityX(0);
-    this.player.setVelocityY(0);
+    this.player.body.setVelocityX(0);
+    this.player.body.setVelocityY(0);
 
     if (this.cursors.left.isDown) {
       this.player.body.velocity.x = -this.player.speed;
@@ -362,9 +370,10 @@ export default class Game extends Phaser.Scene {
     this.input.on(
       "pointermove",
       function (pointer) {
-        this.player.x += pointer.movementX;
-        this.player.y += pointer.movementY;
+        this.player.x = pointer.position.x;
+        this.player.y = pointer.position.y;
         // Force the sprite to stay on screen
+        /* we don't need this anymore:
         this.player.x = Phaser.Math.Wrap(
           this.player.x,
           0,
@@ -375,6 +384,7 @@ export default class Game extends Phaser.Scene {
           0,
           this.game.renderer.height
         );
+        */
       },
       this
     );
@@ -388,10 +398,9 @@ export default class Game extends Phaser.Scene {
         this.input.activePointer.y
       );
     }*/
-
     if (
       //this.input.keyboard.isDown(Phaser.Input.Keyboard.KeyCodes.Z) ||
-      this.zKey.isDown ||
+      this.zKey.keys.isDown ||
       this.input.activePointer.isDown
     ) {
       if (this.returnText && this.returnText.exists) {
