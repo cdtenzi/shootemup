@@ -44,7 +44,6 @@ export default class MainMenu extends Phaser.Scene {
     );
 
     this.zKey = this.input.keyboard.addKey("Z");
-    console.log(this.zKey);
   }
 
   update() {

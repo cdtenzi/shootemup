@@ -9,19 +9,25 @@ import {
 import { setupText, addToScore } from "../../gameUI/textSetup.js";
 import { setupExplosions } from "../../effects/explosions.js";
 import { loadSprites } from "./scene1.preloader.js";
+import { getRandomInt } from "../../util/utils.js";
 
 // We inherit from Phaser.Scene, converting all our old "States" into Scenes
 export default class Game extends Phaser.Scene {
   background;
   preloadBar;
-  nextShooterAt;
+  returnText;
+  showReturn;
 
   player;
   shooterDelay;
   enemyPool;
+  enemyDelay;
+
   shooterPool;
   bossPool;
   boss;
+  nextShooterAt;
+  nextEnemyAt;
 
   nextShotAt;
   shotDelay;
@@ -37,6 +43,7 @@ export default class Game extends Phaser.Scene {
     this.background = null;
     this.preloadBar = null;
     this.enemyPool = null;
+    this.enemyDelay = GlobalConstants.SPAWN_ENEMY_DELAY;
     this.shooterPool = null;
     this.bossPool = null;
     this.boss = null;
@@ -46,7 +53,8 @@ export default class Game extends Phaser.Scene {
     this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
     this.zKey = null;
 
-    this.nextShooterAt = window.Date.now() + 5000;
+    this.nextEnemyAt = Date.now();
+    this.nextShooterAt = Date.now() + 5000;
     this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
   }
 
@@ -60,9 +68,9 @@ export default class Game extends Phaser.Scene {
     setupBackground(this);
     console.log("setting up player...");
     setupPlayer(this);
-    /*
-    console.log("setting up enemies...")
+    console.log("setting up enemies...");
     setupEnemies(this);
+    /*
     console.log("setting up player bullets...");
     setupPlayerBullets(this);
     console.log("setting up enemy bullets...");
@@ -80,18 +88,21 @@ export default class Game extends Phaser.Scene {
     */
     console.log("setting up controls...");
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.zKey = this.input.keyboard.addCapture("Z");
+    this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
   }
 
   update() {
     // we make the background automatically scroll down
-    this.background.tilePositionY -= 0.5;
+    this.background.tilePositionY -= 0.1;
 
-    //this.spawnEnemies();
+    this.spawnEnemies();
     //this.checkCollisions();
     //this.enemyFire();
     this.processPlayerInput();
     //this.processDelayedEffects();
+
+    //trigger green enemies update
+    this.enemyPool.children.each((child) => child.update());
   }
 
   fire() {
@@ -296,24 +307,32 @@ export default class Game extends Phaser.Scene {
   }
 
   spawnEnemies() {
-    if (this.nextEnemyAt < this.time.now && this.enemyPool.countDead() > 0) {
-      this.nextEnemyAt = this.time.now + this.enemyDelay;
-      var enemy = this.enemyPool.getFirstDead(false);
-      // spawn at a random location top of the screen
-      enemy.reset(
-        this.rnd.integerInRange(20, this.game.width - 20),
+    if (this.nextEnemyAt < Date.now()) {
+      //&& this.enemyPool.countDead() > 0) {
+      this.nextEnemyAt = Date.now() + this.enemyDelay;
+      var enemy = this.enemyPool.getFirstDead(
+        false,
+        getRandomInt(20, this.scale.width - 20),
         0,
-        GlobalConstants.ENEMY_HEALTH
+        null,
+        null,
+        true
       );
-      // also randomize the speed
-      enemy.body.velocity.y = this.rnd.integerInRange(
-        GlobalConstants.ENEMY_MIN_Y_VELOCITY,
-        GlobalConstants.ENEMY_MAX_Y_VELOCITY
-      );
-      enemy.play("fly");
+      // spawn at a random location top of the screen
+      if (enemy) {
+        enemy.setPosition(getRandomInt(20, this.scale.width - 20), 0);
+        enemy.health = GlobalConstants.ENEMY_HEALTH;
+        // also randomize the speed
+        enemy.body.velocity.y = getRandomInt(
+          GlobalConstants.ENEMY_MIN_Y_VELOCITY,
+          GlobalConstants.ENEMY_MAX_Y_VELOCITY
+        );
+        enemy.play("fly");
+        enemy.enableSelf(); //custom method we created in enemy class
+      }
     }
 
-    // Spawning white enemies that move differently:
+    /* Spawning white enemies that move differently:
     if (
       this.nextShooterAt < this.time.now &&
       this.shooterPool.countActive < 2
@@ -348,7 +367,8 @@ export default class Game extends Phaser.Scene {
       shooter.play("fly");
       // each shooter has their own shot timer
       shooter.nextShotAt = 0;
-    }
+      
+    }*/
   }
 
   processPlayerInput() {
@@ -397,15 +417,24 @@ export default class Game extends Phaser.Scene {
         this.input.activePointer.x,
         this.input.activePointer.y
       );
-    }*/
+    }
     if (
       //this.input.keyboard.isDown(Phaser.Input.Keyboard.KeyCodes.Z) ||
-      this.zKey.keys.isDown ||
+      this.zKey.isDown ||
       this.input.activePointer.isDown
     ) {
       if (this.returnText && this.returnText.exists) {
         this.quitGame();
       } else {
+        this.fire();
+      }
+    }*/
+    if (this.zKey.isDown) {
+      console.log("quitting game...");
+      this.quitGame();
+    }
+    if (this.input.activePointer.isDown) {
+      {
         this.fire();
       }
     }
@@ -420,17 +449,17 @@ export default class Game extends Phaser.Scene {
   quitGame(pointer) {
     //  Here you should destroy anything you no longer need.
     //  Stop music, delete sprites, purge caches, free resources, all that good stuff.
-    this.sea.destroy();
+    this.background.destroy(); //this.sea.destroy();
     this.player.destroy();
-    this.enemyPool.destroy();
-    this.bulletPool.destroy();
-    this.explosionPool.destroy();
-    this.instructions.destroy();
-    this.scoreText.destroy();
-    this.endText.destroy();
-    this.returnText.destroy();
+    //this.enemyPool.destroy();
+    //this.bulletPool.destroy();
+    //this.explosionPool.destroy();
+    //this.instructions.destroy();
+    //this.scoreText.destroy();
+    //this.endText.destroy();
+    //this.returnText.destroy();
     //  Then let's go back to the main menu.
-    this.state.start("MainMenu");
+    this.scene.start("MainMenu");
   }
 
   enemyHit(bullet, enemy) {
@@ -529,19 +558,19 @@ export default class Game extends Phaser.Scene {
       this.instructions.destroy();
     }
 
-    if (this.ghostUntil && this.ghostUntil < this.time.now) {
+    if (this.ghostUntil && this.ghostUntil < Date.now()) {
       this.ghostUntil = null;
       this.player.play("fly");
     }
 
-    if (this.showReturn && this.time.now > this.showReturn) {
+    if (this.showReturn && Date.now() > this.showReturn) {
       this.returnText = this.add.text(
         this.game.width / 2,
         this.game.height / 2 + 20,
         "Press Z or Tap Game to go back to Main Menu",
         { font: "16px sans-serif", fill: "#fff" }
       );
-      this.returnText.anchor.setTo(0.5, 0.5);
+      //this.returnText.anchor.setTo(0.5, 0.5);
       this.showReturn = false;
     }
 
