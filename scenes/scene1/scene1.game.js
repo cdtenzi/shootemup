@@ -74,6 +74,7 @@ export default class Game extends Phaser.Scene {
 
   preload() {
     loadSprites(this);
+    this.gameOver = false;
   }
 
   create() {
