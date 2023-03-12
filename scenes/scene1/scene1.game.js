@@ -17,45 +17,59 @@ export default class Game extends Phaser.Scene {
   preloadBar;
   returnText;
   showReturn;
-
   player;
-  shooterDelay;
+  bulletPool;
+  enemyBulletPool;
   enemyPool;
   enemyDelay;
-
+  nextEnemyAt;
   shooterPool;
+  shooterDelay;
+  nextShooterAt;
   bossPool;
   boss;
-  nextShooterAt;
-  nextEnemyAt;
-
   nextShotAt;
   shotDelay;
-
   powerUpPool;
-
+  explosionPool;
   lives;
-
+  endText;
+  instExpire;
+  score;
+  scoreText;
+  instructions;
+  bossApproaching;
   zKey;
 
   constructor() {
     super("Game");
+    this.bulletPool = null;
+    this.enemyBulletPool = null;
     this.background = null;
+    this.showReturn = false;
     this.preloadBar = null;
     this.enemyPool = null;
     this.enemyDelay = GlobalConstants.SPAWN_ENEMY_DELAY;
     this.shooterPool = null;
     this.bossPool = null;
-    this.boss = null;
-    this.nextShotAt = 0;
-    this.shotDelay = GlobalConstants.SHOT_DELAY;
-    this.powerUpPool = null;
-    this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
-    this.zKey = null;
-
     this.nextEnemyAt = Date.now();
     this.nextShooterAt = Date.now() + 5000;
+    this.nextShotAt = 0;
     this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
+    this.shotDelay = GlobalConstants.SHOT_DELAY;
+
+    this.boss = null;
+
+    this.powerUpPool = null;
+    this.explosionPool = null;
+    this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
+    this.endText = null;
+    this.instExpire = GlobalConstants.INSTRUCTION_EXPIRE;
+    this.score = null;
+    this.scoreText = null;
+    this.instructions = null;
+    this.bossApproaching = false;
+    this.zKey = null;
   }
 
   preload() {
@@ -70,22 +84,23 @@ export default class Game extends Phaser.Scene {
     setupPlayer(this);
     console.log("setting up enemies...");
     setupEnemies(this);
-    /*
+    console.log("setting up player icons...");
+    setupPlayerIcons(this);
     console.log("setting up player bullets...");
     setupPlayerBullets(this);
     console.log("setting up enemy bullets...");
     setupEnemyBullets(this);
     console.log("setting up explosions...");
     setupExplosions(this);
-    console.log("setting up player icons...");
-    setupPlayerIcons(this);
     console.log("setting up text...");
     setupText(this);
     console.log("setting up audio...");
     setupAudio(this);
     console.log("setting up collisions...");
-    this.setUpCollisions();
-    */
+    // we dont need colliders
+    //this.setUpCollisions();
+    this.setUpOverlappings();
+
     console.log("setting up controls...");
     this.cursors = this.input.keyboard.createCursorKeys();
     this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
@@ -93,88 +108,119 @@ export default class Game extends Phaser.Scene {
 
   update() {
     // we make the background automatically scroll down
-    this.background.tilePositionY -= 0.1;
+    this.background.tilePositionY -= 0.05;
 
     this.spawnEnemies();
-    //this.checkCollisions();
-    //this.enemyFire();
+    this.enemyFire();
     this.processPlayerInput();
-    //this.processDelayedEffects();
+    this.processDelayedEffects();
+    //this.spawnBoss();
 
-    //trigger green enemies update
-    this.enemyPool.children.each((child) => child.update());
+    //trigger enemies update
+    if (this.enemyPool.children)
+      this.enemyPool.children.each((child) => child.update());
+
+    if (this.shooterPool.children)
+      this.shooterPool.children.each((child) => child.update());
+
+    if (this.bulletPool.children)
+      this.bulletPool.children.each((child) => child.update());
+
+    if (this.enemyBulletPool.children)
+      this.enemyBulletPool.children.each((child) => child.update());
   }
 
   fire() {
     // chequeamos el ratio de disparo y si pasaron más de los milisegundos
     // esperados para emitir la siguiente bala, si no, cortamos la ejecución
-    if (this.nextShotAt > this.time.now || !this.player.alive) {
+    if (this.nextShotAt > Date.now() || !this.player.active) {
       return;
     }
-    this.nextShotAt = this.time.now + this.shotDelay;
-
+    this.nextShotAt = Date.now() + this.shotDelay;
     this.playerFireSFX.play();
 
     var bullet;
-    if (this.weaponLevel === 0) {
-      // resetea las balas muertas
-      if (this.bulletPool.countDead() === 0) {
-        return;
+    if (this.player.weaponLevel === 0) {
+      // reset dead bullets
+      bullet = this.bulletPool.getFirstDead(false, 0, 0, null, null, true);
+      if (bullet) {
+        bullet.enableBody(true, this.player.x, this.player.y, true, true);
+        bullet.body.velocity.y = -GlobalConstants.BULLET_VELOCITY;
       }
-      bullet = this.bulletPool.getFirstDead(false);
-      bullet.reset(this.player.x, this.player.y - 20);
-      bullet.body.velocity.y = -GlobalConstants.BULLET_VELOCITY;
     } else {
-      // chequea que el poder del arma no quede por debajo de la cantidad de balas
-      if (this.bulletPool.countDead() < this.weaponLevel * 2) {
-        return;
-      }
-      // genera una bala por cada powerUp (nivel/poder del arma)
-      for (var i = 0; i < this.weaponLevel; i++) {
-        bullet = this.bulletPool.getFirstDead(false);
+      //if (this.bulletPool.countActive() > this.player.weaponLevel * 2) {
+      // we create a bullet for each powerUp collected
+      for (var i = 0; i < this.player.weaponLevel; i++) {
+        //for (var i = 0; i < 2; i++) {
+        bullet = this.bulletPool.getFirstDead(false, 0, 0, null, null, true);
         // spawn left bullet slightly left off center
-        bullet.reset(this.player.x - (10 + i * 6), this.player.y - 20);
+        bullet.enableBody(
+          true,
+          this.player.x - (10 + i * 6),
+          this.player.y - 20,
+          true,
+          true
+        );
         // the left bullets spread from -95 degrees to -135 degrees
-        this.physics.arcade.velocityFromAngle(
-          -95 - i * 10,
+        //this.physics.arcade.velocityFromAngle(
+        this.physics.velocityFromRotation(
+          // I modified the math to use radians and reduce bullet spreadings
+          Math.PI / -2 - i / 20, // -95 - i * 10,
           GlobalConstants.BULLET_VELOCITY,
           bullet.body.velocity
         );
 
-        bullet = this.bulletPool.getFirstDead(false);
+        bullet = this.bulletPool.getFirstDead(false, 0, 0, null, null, true);
         // spawn right bullet slightly right off center
-        bullet.reset(this.player.x + (10 + i * 6), this.player.y - 20);
+        bullet.enableBody(
+          true,
+          this.player.x + (10 + i * 6),
+          this.player.y - 20,
+          true,
+          true
+        );
         // the right bullets spread from -85 degrees to -45
-        this.physics.arcade.velocityFromAngle(
-          -85 + i * 10,
+        //this.physics.arcade.velocityFromAngle(
+        this.physics.velocityFromRotation(
+          // I modified the math to use radians and reduce bullet spreading
+          Math.PI / -2 + i / 20, // -85 + i * 10,
           GlobalConstants.BULLET_VELOCITY,
           bullet.body.velocity
         );
       }
+      //}
     }
   }
 
   enemyFire() {
     this.shooterPool.children.each(function (enemy) {
-      if (enemy.body.enable) {
-        if (
-          Date.now() > enemy.nextShotAt &&
-          this.enemyBulletPool.countDead() > 0
-        ) {
-          var bullet = this.enemyBulletPool.getFirstDead(false);
-          bullet.reset(enemy.x, enemy.y);
-          this.physics.arcade.moveToObject(
-            bullet,
-            this.player,
-            GlobalConstants.ENEMY_BULLET_VELOCITY
+      //return;
+      if (enemy.active && Date.now() > this.shooterDelay) {
+        if (Date.now() > this.shooterDelay) {
+          var bullet = this.enemyBulletPool.getFirstDead(
+            false,
+            enemy.x,
+            enemy.y,
+            null,
+            null,
+            true
           );
-          enemy.nextShotAt = this.time.now + GlobalConstants.SHOOTER_SHOT_DELAY;
-          this.enemyFireSFX.play();
+          if (bullet) {
+            bullet.enableBody(true, enemy.x, enemy.y, true, true);
+            this.physics.moveToObject(
+              bullet,
+              this.player,
+              GlobalConstants.ENEMY_BULLET_VELOCITY
+            );
+            this.shooterDelay = Date.now() + GlobalConstants.SHOOTER_SHOT_DELAY;
+            this.enemyFireSFX.play();
+          }
         }
       }
     }, this);
 
     // Disparos del Boss
+    /*
     if (
       this.bossApproaching === false &&
       this.boss.body.enable &&
@@ -219,14 +265,24 @@ export default class Game extends Phaser.Scene {
         }
       }
     }
+    */
   }
 
-  //
-  // update()- related functions
-  //
-  checkCollisions() {
+  // we changed this from checkCollisions()
+  setUpOverlappings() {
     // we translate this to the P3 style, using the physics .overlap:
     //this.physics.arcade.overlap(
+
+    // player overlapping enemies:
+    this.physics.add.overlap(
+      this.player,
+      this.enemyPool,
+      this.playerCrash,
+      null,
+      this
+    );
+
+    // bullets overlapping enemies
     this.physics.add.overlap(
       this.bulletPool,
       this.enemyPool,
@@ -241,22 +297,17 @@ export default class Game extends Phaser.Scene {
       null,
       this
     );
-    this.physics.add.overlap(
-      this.player,
-      this.enemyPool,
-      this.playerHit,
-      null,
-      this
-    );
-    // Jugador vs enemigos
+
+    //player crashing on shooters
     this.physics.add.overlap(
       this.player,
       this.shooterPool,
-      this.playerHit,
+      this.playerCrash,
       null,
       this
     );
-    // jugador vs balas enemigas
+
+    // player vs enemy bullets
     this.physics.add.overlap(
       this.player,
       this.enemyBulletPool,
@@ -264,6 +315,7 @@ export default class Game extends Phaser.Scene {
       null,
       this
     );
+
     // jugador vs Power Up!
     this.physics.add.overlap(
       this.player,
@@ -273,6 +325,7 @@ export default class Game extends Phaser.Scene {
       this
     );
 
+    /*
     //Boss: Solo colisiona una vez que esta en posición
     if (this.bossApproaching === false) {
       this.physics.add.overlap(
@@ -285,42 +338,52 @@ export default class Game extends Phaser.Scene {
       this.physics.add.overlap(
         this.player,
         this.bossPool,
-        this.playerHit,
+        this.playerCrash,
         null,
         this
       );
     }
+    */
   }
 
   setUpCollisions() {
-    this.physics.add.collider(this.bulletPool, this.enemyPool);
-    this.physics.add.collider(this.bulletPool, this.shooterPool);
+    //we don't want bullets to collide stuff, we want them to go through and kill
+    //this.physics.add.collider(this.bulletPool, this.enemyPool);
+    //this.physics.add.collider(this.bulletPool, this.shooterPool);
+    /*
+    We don't want enemies to collide neither we want to. We all just explode.
     this.physics.add.collider(this.player, this.enemyPool);
     // Jugador vs enemigos
     this.physics.add.collider(this.player, this.shooterPool);
+    
     // jugador vs balas enemigas
     this.physics.add.collider(this.player, this.enemyBulletPool);
+
     // jugador vs Power Up!
     this.physics.add.collider(this.player, this.powerUpPool);
     //Boss: Solo colisiona una vez que esta en posición
     this.physics.add.collider(this.bulletPool, this.bossPool);
+    */
   }
 
+  //
+  // update()- related functions
+  //
   spawnEnemies() {
     if (this.nextEnemyAt < Date.now()) {
       //&& this.enemyPool.countDead() > 0) {
       this.nextEnemyAt = Date.now() + this.enemyDelay;
-      var enemy = this.enemyPool.getFirstDead(
-        false,
-        getRandomInt(20, this.scale.width - 20),
-        0,
-        null,
-        null,
-        true
-      );
+      var enemy = this.enemyPool.getFirstDead(false, 0, 0, null, null, true);
       // spawn at a random location top of the screen
       if (enemy) {
-        enemy.setPosition(getRandomInt(20, this.scale.width - 20), 0);
+        //enemy.setPosition(getRandomInt(20, this.scale.width - 20), 0);
+        enemy.enableBody(
+          true,
+          getRandomInt(20, this.scale.width - 20),
+          -32,
+          true,
+          true
+        );
         enemy.health = GlobalConstants.ENEMY_HEALTH;
         // also randomize the speed
         enemy.body.velocity.y = getRandomInt(
@@ -328,47 +391,80 @@ export default class Game extends Phaser.Scene {
           GlobalConstants.ENEMY_MAX_Y_VELOCITY
         );
         enemy.play("fly");
-        enemy.enableSelf(); //custom method we created in enemy class
       }
     }
 
-    /* Spawning white enemies that move differently:
-    if (
-      this.nextShooterAt < this.time.now &&
-      this.shooterPool.countActive < 2
-    ) {
-      this.nextShooterAt = this.time.now + this.shooterDelay;
-      var shooter = this.shooterPool.getFirstDead(false);
-      // spawn at a random location at the top
-      shooter.reset(
-        this.rnd.integerInRange(20, this.game.width - 20),
-        0,
-        GlobalConstants.SHOOTER_HEALTH
+    // Spawning white enemies that move differently:
+    // We try to keep 3 shooters at all times:
+    //if (this.nextShooterAt < Date.now() && this.shooterPool.countActive() < 3) {
+    //  this.nextShooterAt = Date.now() + this.shooterDelay;
+    if (this.shooterPool.countActive() < 3) {
+      var shooter = this.shooterPool.getFirstDead(
+        false,
+        this.scale.width / 2,
+        -32,
+        null,
+        null,
+        true
       );
-      // choose a random target location at the bottom
-      var target = this.rnd.integerInRange(20, this.game.width - 20);
-      // move to target and rotate the sprite accordingly
-      shooter.rotation =
-        this.physics.arcade.moveToXY(
+      if (shooter) {
+        // spawn at a random location at the top
+        shooter.enableBody(
+          true,
+          getRandomInt(20, this.scale.width - 20),
+          -32,
+          true,
+          true
+        );
+        /*
+        shooter.health = GlobalConstants.SHOOTER_HEALTH;
+   
+        // we need to translate this to P3 way of doing things, see below:
+        // choose a random target location at the bottom
+        var targetX = getRandomInt(20, this.game.width - 20);
+        // move to target and rotate the sprite accordingly
+        shooter.rotation =
+          this.physics.arcade.moveToXY(
+            shooter,
+            targetX,
+            scene.scale.height,
+            getRandomInt(
+              GlobalConstants.SHOOTER_MIN_VELOCITY,
+              GlobalConstants.SHOOTER_MAX_VELOCITY
+            )
+          ) -
+          Math.PI / 2; //--> Esto es importante: Phser asume que los sprites tienen
+        // orientación horizontal de izquierda a derecha. Pero en este caso, nuestros
+        // sprites se orienta de arriba hacia abajo, lo cual implica que están "girados"
+        // desde el punto de vista de Phaser en +(PI/2) radianes. Es por eso que a la
+        // cuenta del target rotation le restamos esa rotación, para que el avión apunte
+        // hacia donde realmente se dirige.
+        */
+        var target = new Phaser.Math.Vector2();
+        target.x = getRandomInt(20, this.scale.width - 20);
+        target.y = this.scale.height + 32; // (32px is the asset size + the screen height)
+        // now we find the angle between the shooter and its target:
+        var angle = Phaser.Math.Angle.Between(
+          shooter.x,
+          shooter.y,
+          target.x,
+          target.y
+        );
+        // Now that we found the rotation angle, here we aim the shooter to its target position:
+        shooter.rotation = angle - Math.PI / 2;
+        // we ask the scene to move the shooter to the target destination:
+        // at a random speed between max and min.
+        this.physics.moveToObject(
           shooter,
           target,
-          this.game.height,
-          this.rnd.integerInRange(
+          getRandomInt(
             GlobalConstants.SHOOTER_MIN_VELOCITY,
             GlobalConstants.SHOOTER_MAX_VELOCITY
           )
-        ) -
-        Math.PI / 2; //--> Esto es importante: Phser asume que los sprites tienen
-      // orientación horizontal de izquierda a derecha. Pero en este caso, nuestros
-      // sprites se orienta de arriba hacia abajo, lo cual implica que están "girados"
-      // desde el punto de vista de Phaser en +(PI/2) radianes. Es por eso que a la
-      // cuenta del target rotation le restamos esa rotación, para que el avión apunte
-      // hacia donde realmente se dirige.
-      shooter.play("fly");
-      // each shooter has their own shot timer
-      shooter.nextShotAt = 0;
-      
-    }*/
+        );
+        this.nextShooterAt = Date.now() + this.shooterDelay;
+      }
+    }
   }
 
   processPlayerInput() {
@@ -433,29 +529,20 @@ export default class Game extends Phaser.Scene {
       console.log("quitting game...");
       this.quitGame();
     }
-    if (this.input.activePointer.isDown) {
-      {
-        this.fire();
-      }
-    }
+
+    this.input.on("pointerdown", this.fire, this);
   }
 
-  processDelayedEffects() {
-    if (this.instructions.exists && this.time.now > this.instExpire) {
-      this.instructions.destroy();
-    }
-  }
-
-  quitGame(pointer) {
+  quitGame() {
     //  Here you should destroy anything you no longer need.
     //  Stop music, delete sprites, purge caches, free resources, all that good stuff.
     this.background.destroy(); //this.sea.destroy();
     this.player.destroy();
-    //this.enemyPool.destroy();
-    //this.bulletPool.destroy();
-    //this.explosionPool.destroy();
-    //this.instructions.destroy();
-    //this.scoreText.destroy();
+    this.enemyPool.destroy();
+    this.bulletPool.destroy();
+    this.explosionPool.destroy();
+    this.instructions.destroy();
+    this.scoreText.destroy();
     //this.endText.destroy();
     //this.returnText.destroy();
     //  Then let's go back to the main menu.
@@ -467,24 +554,46 @@ export default class Game extends Phaser.Scene {
     this.damageEnemy(enemy, GlobalConstants.BULLET_DAMAGE);
   }
 
-  playerHit(player, enemy) {
+  playerHit(player, bullet) {
     // check first if this.ghostUntil is not not undefined or null
-    if (this.ghostUntil && this.ghostUntil > this.time.now) {
+    if (player.ghostUntil && player.ghostUntil > Date.now()) {
       return;
     }
-    this.playerExplosionSFX.play();
+    bullet.disableBody(true, true);
+    var life = this.lives.getFirstAlive();
+    if (life) {
+      life.active = false; //life.disableBody(true, true);
+      life.visible = false;
+      this.player.weaponLevel = 0;
+      this.player.ghostUntil = Date.now() + GlobalConstants.PLAYER_GHOST_TIME;
+      this.player.play("ghost");
+    } else {
+      this.explode(player);
+      this.player.disableBody(true, true);
+      this.displayEnd(false);
+    }
+  }
+
+  playerCrash(player, enemy) {
+    // check first if this.ghostUntil is not not undefined or null
+    if (player.ghostUntil && player.ghostUntil > Date.now()) {
+      return;
+    }
+    console.log(player);
+    //this.playerExplosionSFX.play();
     // crashing into an enemy only deals 5 damage
     this.damageEnemy(enemy, GlobalConstants.CRASH_DAMAGE);
     // si al jugador le quedan vidas, ghostea, si no, muere
     var life = this.lives.getFirstAlive();
-    if (life !== null) {
-      life.disableBody(true, true);
-      this.weaponLevel = 0;
-      this.ghostUntil = this.time.now + GlobalConstants.PLAYER_GHOST_TIME;
+    if (life) {
+      life.active = false; //life.disableBody(true, true);
+      life.visible = false;
+      this.player.weaponLevel = 0;
+      this.player.ghostUntil = Date.now() + GlobalConstants.PLAYER_GHOST_TIME;
       this.player.play("ghost");
     } else {
       this.explode(player);
-      player.disableBody(true, true);
+      this.player.disableBody(true, true);
       this.displayEnd(false);
     }
   }
@@ -494,18 +603,28 @@ export default class Game extends Phaser.Scene {
     powerUp.disableBody(true, true);
     this.powerUpSFX.play();
 
-    if (this.weaponLevel < 5) {
-      this.weaponLevel++;
+    if (player.weaponLevel < 5) {
+      player.weaponLevel++;
     }
   }
 
   explode(sprite) {
+    /*
     if (this.explosionPool.countDead() === 0) {
       return;
     }
-    var explosion = this.explosionPool.getFirstExists(false);
-    explosion.reset(sprite.x, sprite.y);
-    explosion.play("boom", 15, false, true);
+    */
+    var explosion = this.explosionPool.getFirstDead(
+      false,
+      sprite.x,
+      sprite.y,
+      null,
+      null,
+      true
+    );
+    //explosion.body.reset(sprite.x, sprite.y);
+    explosion.enableBody(true, sprite.x, sprite.y, true, true);
+    explosion.play("boom"); //, 15, false, true);
     // add the original sprite's velocity to the explosion
     explosion.body.velocity.x = sprite.body.velocity.x;
     explosion.body.velocity.y = sprite.body.velocity.y;
@@ -514,13 +633,15 @@ export default class Game extends Phaser.Scene {
   damageEnemy(enemy, damage) {
     //Using damage() automatically kill()s the sprite once its health is reduced to zero.
     enemy.damage(damage);
-    if (enemy.alive) {
+    // if after damage has been done the enemy is still alive, we show it's been hit.
+    if (enemy.health > 0) {
       enemy.play("hit");
-    } else {
+    } /* else {
       this.explode(enemy);
       this.explosionSFX.play();
       this.spawnPowerUp(enemy);
-      addToScore(this, enemy.reward);
+      addToScore(this, enemy.reward);*/
+    /*
       // We check the sprite key (e.g. 'greenEnemy') to see if the sprite is a boss
       // For full games, it would be better to set flags on the sprites themselves
       if (enemy.key === "boss") {
@@ -530,59 +651,82 @@ export default class Game extends Phaser.Scene {
         this.enemyBulletPool.destroy();
         this.displayEnd(true);
       }
-    }
+    }*/
   }
 
   spawnBoss() {
-    this.bossApproaching = true;
-    this.boss.reset(this.game.width / 2, 0, GlobalConstants.BOSS_HEALTH);
-    this.physics.enable(this.boss, Phaser.Physics.ARCADE);
-    this.boss.body.velocity.y = GlobalConstants.BOSS_Y_VELOCITY;
-    this.boss.play("fly");
+    if (scene.score >= 20000 && scene.bossPool.countActive() < 1) {
+      this.bossApproaching = true;
+      //make it approach from the top:
+      this.boss = this.bossPool.getFirstDead(
+        false,
+        this.scale.width / 2,
+        -32,
+        null,
+        null,
+        true
+      );
+      this.boss.body.velocity.y = GlobalConstants.BOSS_Y_VELOCITY;
+      this.boss.play("fly");
+      //if it's in position, start fighting
+      if (this.bossApproaching && this.boss.y > 80) {
+        this.bossApproaching = false;
+        this.boss.nextShotAt = 0;
+
+        this.boss.body.velocity.y = 0;
+        this.boss.body.velocity.x = GlobalConstants.BOSS_X_VELOCITY;
+        // allow bouncing off world bounds
+        this.boss.body.bounce.x = 1;
+        this.boss.body.collideWorldBounds = true;
+      }
+
+      /*
+      this.boss.reset(this.game.width / 2, 0, GlobalConstants.BOSS_HEALTH);
+      this.physics.enable(this.boss, Phaser.Physics.ARCADE);
+      */
+    }
   }
 
   spawnPowerUp(enemy) {
-    if (this.powerUpPool.countDead() === 0 || this.weaponLevel === 5) {
-      return;
-    }
+    //(this.powerUpPool.countDead() === 0 || this.weaponLevel === 5) {
+    if (this.player.weaponLevel === 5) return;
 
-    if (this.rnd.frac() < enemy.dropRate) {
-      var powerUp = this.powerUpPool.getFirstExists(false);
-      powerUp.reset(enemy.x, enemy.y);
-      powerUp.body.velocity.y = GlobalConstants.POWERUP_VELOCITY;
+    if (Phaser.Math.RND.frac() < enemy.dropRate) {
+      var powerUp = this.powerUpPool.getFirstDead(
+        false,
+        enemy.x,
+        enemy.y,
+        null,
+        null,
+        true
+      );
+      if (powerUp) {
+        powerUp.enableBody(true, enemy.x, enemy.y, true, true);
+        powerUp.body.velocity.y = GlobalConstants.POWERUP_VELOCITY;
+      }
     }
   }
 
   processDelayedEffects() {
-    if (this.instructions.exists && this.time.now > this.instExpire) {
+    if (this.instructions && Date.now() > this.instExpire) {
       this.instructions.destroy();
     }
 
-    if (this.ghostUntil && this.ghostUntil < Date.now()) {
-      this.ghostUntil = null;
+    /* We created an event in the player class to accomplish this
+    if (this.player.ghostUntil && this.player.ghostUntil < Date.now()) {
+      this.player.ghostUntil = 0;
       this.player.play("fly");
     }
-
+    */
     if (this.showReturn && Date.now() > this.showReturn) {
       this.returnText = this.add.text(
-        this.game.width / 2,
-        this.game.height / 2 + 20,
+        this.scale.width / 2,
+        this.scale.height / 2 + 20,
         "Press Z or Tap Game to go back to Main Menu",
         { font: "16px sans-serif", fill: "#fff" }
       );
-      //this.returnText.anchor.setTo(0.5, 0.5);
+      this.returnText.setOrigin(0.5, 0.5); //this.returnText.anchor.setTo(0.5, 0.5);
       this.showReturn = false;
-    }
-
-    if (this.bossApproaching && this.boss.y > 80) {
-      this.bossApproaching = false;
-      this.boss.nextShotAt = 0;
-
-      this.boss.body.velocity.y = 0;
-      this.boss.body.velocity.x = GlobalConstants.BOSS_X_VELOCITY;
-      // allow bouncing off world bounds
-      this.boss.body.bounce.x = 1;
-      this.boss.body.collideWorldBounds = true;
     }
   }
 

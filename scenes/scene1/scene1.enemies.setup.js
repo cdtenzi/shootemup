@@ -1,127 +1,7 @@
-import { GlobalConstants } from "../../util/GlobalConstants.js";
-
-export class GreenEnemy extends Phaser.GameObjects.Sprite {
-  reward;
-  dropRate;
-  health;
-
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-    this.health = GlobalConstants.ENEMY_HEALTH;
-    this.reward = GlobalConstants.ENEMY_REWARD;
-    this.dropRate = GlobalConstants.ENEMY_DROP_RATE;
-    this.anims.create({
-      key: "fly",
-      frames: scene.anims.generateFrameNumbers("greenEnemy", {
-        start: 0,
-        end: 2,
-      }),
-      frameRate: 30,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "hit",
-      frames: scene.anims.generateFrameNumbers("greenEnemy", [3, 1, 3, 2]),
-      frameRate: 20,
-      repeat: -1,
-    });
-    //this is different in P3
-    //this.checkWorldBounds = true;
-    //this.outOfBoundsKill = true;
-    this.on("animationcomplete", (e) => {
-      e.play("fly");
-    });
-    //start anim
-    this.play("fly");
-    //enabling physics
-    scene.physics.world.enableBody(this);
-  }
-
-  update() {
-    // we disable out of bounds enemies
-    if (this.y > this.scene.scale.height || this.y < -32) this.disableSelf();
-    if (this.x > this.scene.scale.width || this.x < 0) this.disableSelf();
-  }
-
-  disableSelf() {
-    this.visible = false;
-    this.setActive(false);
-  }
-
-  enableSelf() {
-    this.visible = true;
-    this.setActive(true);
-  }
-}
-
-export class WhiteEnemy extends Phaser.GameObjects.Sprite {
-  reward;
-  dropRate;
-  health;
-
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-    this.health = GlobalConstants.SHOOTER_HEALTH;
-    this.reward = GlobalConstants.SHOOTER_REWARD;
-    this.dropRate = GlobalConstants.SHOOTER_DROP_RATE;
-    this.anims.create({
-      key: "fly",
-      frames: scene.anims.generateFrameNumbers("whiteEnemy", {
-        start: 0,
-        end: 2,
-      }),
-      frameRate: 10,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "hit",
-      frames: scene.anims.generateFrameNumbers("whiteEnemy", [3, 1, 3, 2]),
-      frameRate: 10,
-      repeat: -1,
-    });
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-    this.on("animationcomplete", (e) => {
-      e.play("fly");
-    });
-    //enabling physics
-    scene.physics.world.enableBody(this);
-  }
-}
-
-export class GreenEnemyBoss extends Phaser.GameObjects.Sprite {
-  reward;
-  dropRate;
-
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-
-    this.reward = GlobalConstants.BOSS_REWARD;
-    this.dropRate = GlobalConstants.BOSS_DROP_RATE;
-    this.anims.create({
-      key: "fly",
-      frames: scene.anims.generateFrameNumbers("boss", {
-        start: 0,
-        end: 2,
-      }),
-      frameRate: 10,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: "hit",
-      frames: scene.anims.generateFrameNumbers("boss", [3, 1, 3, 2]),
-      frameRate: 10,
-      repeat: -1,
-    });
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-    this.on("animationcomplete", (e) => {
-      e.play("fly");
-    });
-    //enabling physics
-    scene.physics.world.enableBody(this);
-  }
-}
+import GreenEnemy from "../../enemies/GreenEnemy.class.js";
+import WhiteEnemy from "../../enemies/WhiteEnemy.class.js";
+import EnemyBullet from "../../effects/EnemyBullet.class.js";
+import GreenEnemyBoss from "../../enemies/GreenEnemyBoss.class.js";
 
 export function setupEnemies(scene) {
   scene.enemyPool = scene.physics.add.group();
@@ -130,28 +10,29 @@ export function setupEnemies(scene) {
     classType: GreenEnemy,
     quantity: 50,
     active: false,
-    setXY: { x: 0, y: -32 },
+    visible: false,
+    setXY: { x: -32, y: -32 },
   });
 
-  /*
-  scene.enemyPool.children.iterate((child) => {
-    console.log(child);
-    //child.enableBody(true, child.x, 0, true, true);
-  });
   scene.shooterPool = scene.physics.add.group();
   scene.shooterPool.createMultiple({
     key: "whiteEnemy",
     classType: WhiteEnemy,
     quantity: 50,
+    active: false,
+    visible: false,
+    setXY: { x: -32, y: -32 },
   });
 
   scene.bossPool = scene.physics.add.group();
   scene.bossPool.createMultiple({
     key: "boss",
     classType: GreenEnemyBoss,
-    quantity: 50,
+    quantity: 3,
+    active: false,
+    setXY: { x: -80, y: -80 },
   });
-  */
+
   /*
   //Green enemies:
   scene.enemyPool = scene.add.group();
@@ -225,9 +106,10 @@ export function setupEnemies(scene) {
   });
   */
   // start spawning 5 seconds into the game
+  /* we set this up insice teh scene constructor:
   scene.nextShooterAt = scene.time.now + 5000; // Phaser.Timer.SECOND * 5;
   scene.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
-  /*
+  
   // Boss setup
   scene.bossPool = scene.add.group();
   scene.bossPool.enableBody = true;
@@ -261,27 +143,18 @@ export function setupEnemies(scene) {
       e.play("fly4");
     }, scene);
   });
+  scene.boss = scene.bossPool.getFirstAlive(); // .getTop();
+  scene.bossApproaching = false;
   */
-  //scene.boss = scene.bossPool.getFirstAlive(); // .getTop();
-  //scene.bossApproaching = false;
-}
-
-export class EnemyBullet extends Phaser.GameObjects.Sprite {
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-
-    this.reward = 0;
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-  }
 }
 
 export function setupEnemyBullets(scene) {
   scene.enemyBulletPool = scene.physics.add.group();
-  scene.bulletPool.createMultiple({
+  scene.enemyBulletPool.createMultiple({
     key: "enemyBullet",
     classType: EnemyBullet,
     quantity: 100,
+    active: false,
   });
   /*
   scene.enemyBulletPool.enableBody = true;

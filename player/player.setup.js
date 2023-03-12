@@ -1,37 +1,7 @@
 import { GlobalConstants } from "../util/GlobalConstants.js";
-
-export class Player extends Phaser.GameObjects.Sprite {
-  weaponLevel;
-
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-    this.scene = scene;
-
-    this.anims.create({
-      key: "fly",
-      frames: scene.anims.generateFrameNumbers("player", {
-        start: 0,
-        end: 2,
-      }),
-      frameRate: 30,
-      repeat: -1,
-    });
-
-    this.weaponLevel = 0;
-    this.speed = GlobalConstants.PLAYER_SPEED;
-
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-    // 20 x 20 pixel hitbox, is setup differently in P3 (no body)
-    this.setSize(20, 20, 0, -5); //scene.player.body.setSize(20, 20, 0, -5);
-
-    //start flying!
-    this.play("fly");
-
-    //enabling physics
-    scene.physics.world.enableBody(this);
-  }
-}
+import { Player } from "./Player.class.js";
+import { PowerUp } from "./powerups/PowerUp1.class.js";
+import PlayerBullet from "../effects/PlayerBullet.class.js";
 
 export function setupPlayer(scene) {
   var avatar = new Player(
@@ -83,78 +53,58 @@ export function setupPlayer(scene) {
   //scene.player.setCollideWorldBounds(true);
 }
 
-export class PowerUp extends Phaser.GameObjects.Sprite {
-  reward;
-
-  constructor(scene, x, y, assetName) {
-    super(scene, x, y, assetName);
-
-    this.reward = GlobalConstants.POWERUP_REWARD;
-
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-  }
-}
-
 export function setupPlayerIcons(scene) {
+  // creating the powerUps
   scene.powerUpPool = scene.physics.add.group();
   scene.powerUpPool.createMultiple({
     key: "powerup1",
     classType: PowerUp,
-    quantity: 100,
+    quantity: 5,
+    active: false,
   });
-  /*
+  scene.powerUpPool.children.each((child) => {
+    child.reward = GlobalConstants.POWERUP_REWARD;
+  });
+
+  /* all body and Physics moved to PowerUp class
   scene.powerUpPool.enableBody = true;
   scene.powerUpPool.physicsBodyType = Phaser.Physics.ARCADE;
-  scene.powerUpPool.createMultiple(5, "powerup1");
+  scene.powerUpPool.createMultiple({ quantity: 5, key: "powerup1" });
   //scene.powerUpPool.setAll("anchor.x", 0.5); // P3 has this by default
   //scene.powerUpPool.setAll("anchor.y", 0.5); // P3 has this by default
-  scene.powerUpPool.setAll("outOfBoundsKill", true);
-  scene.powerUpPool.setAll("checkWorldBounds", true);
-  scene.powerUpPool.setAll(
+  //scene.powerUpPool.setAll("outOfBoundsKill", true);
+  //scene.powerUpPool.setAll("checkWorldBounds", true);
+    scene.powerUpPool.setAll(
     "reward",
     GlobalConstants.POWERUP_REWARD,
     false,
     false,
     0,
     true
-  );
-  */
+  );*/
+  // Creating extra lives
   scene.lives = scene.add.group();
   // calculate location of first life icon
   var firstLifeIconX =
     scene.scale.width - 10 - GlobalConstants.PLAYER_EXTRA_LIVES * 30;
   for (var i = 0; i < GlobalConstants.PLAYER_EXTRA_LIVES; i++) {
+    // We dynamically create 1 icon for each life we have left:
     var life = scene.lives.create(firstLifeIconX + 30 * i, 30, "player");
     life.setScale(0.5); // .scale.setTo(0.5, 0.5);
     //life.anchor.setTo(0.5, 0.5); // P3 has this by default
   }
 }
 
-export class PlayerBullet extends Phaser.GameObjects.Sprite {
-  constructor(scene) {
-    let x = scene.player.x;
-    let y = scene.player.y;
-    super(scene, x, y, "bullet");
-
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
-    //add this instance to the scene:
-    this.scene.add.existing(this);
-    //enable physics:
-    scene.physics.world.enableBody(this);
-  }
-}
-
 export function setupPlayerBullets(scene) {
-  // Add an empty sprite group into our game
+  // we declared a PlayerBullet class for this inside the effects folder
   scene.bulletPool = scene.physics.add.group();
   scene.bulletPool.createMultiple({
     key: "bullet",
     classType: PlayerBullet,
-    quantity: 100,
+    quantity: 200,
+    active: false,
+    visible: false,
   });
-
   /*
   // Enable physics to the whole sprite group
   scene.bulletPool.enableBody = true;
@@ -170,7 +120,8 @@ export function setupPlayerBullets(scene) {
   // Automatically kill the bullet sprites when they go out of bounds
   scene.bulletPool.setAll("outOfBoundsKill", true);
   scene.bulletPool.setAll("checkWorldBounds", true);
-  */
+  // we've done these in the scene constructor:
   scene.nextShotAt = 0;
   scene.shotDelay = GlobalConstants.SHOT_DELAY;
+  */
 }

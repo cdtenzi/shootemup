@@ -1,4 +1,4 @@
-export class Explosion extends Phaser.GameObjects.Sprite {
+export class Explosion extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, assetName) {
     super(scene, x, y, assetName);
 
@@ -8,12 +8,16 @@ export class Explosion extends Phaser.GameObjects.Sprite {
         start: 0,
         end: 5,
       }),
-      frameRate: 20,
+      frameRate: 15,
       repeat: 0,
       hideOnComplete: true,
     });
-    this.outOfBoundsKill = true;
-    this.checkWorldBounds = true;
+    //enabling physics
+    scene.physics.world.enableBody(this);
+
+    this.on("animationcomplete", () => {
+      this.disableBody(true, true);
+    });
   }
 }
 
@@ -23,9 +27,10 @@ export function setupExplosions(scene) {
     key: "greenEnemy",
     classType: Explosion,
     quantity: 100,
+    active: false,
   });
   /*
-  scene.explosionPool.enableBody = true;
+  scene.explosionPool.enasbleBody = true;
   scene.explosionPool.physicsBodyType = Phaser.Physics.ARCADE;
   scene.explosionPool.createMultiple(100, "explosion");
   scene.explosionPool.setAll("anchor.x", 0.5);
