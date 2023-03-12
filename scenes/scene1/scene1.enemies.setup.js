@@ -30,6 +30,7 @@ export function setupEnemies(scene) {
     classType: GreenEnemyBoss,
     quantity: 3,
     active: false,
+    visible: false,
     setXY: { x: -80, y: -80 },
   });
 

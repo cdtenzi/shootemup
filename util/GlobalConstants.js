@@ -16,7 +16,7 @@ export const GlobalConstants = {
 
   SHOT_DELAY: 1000 * 0.1, // Phaser.Timer.SECOND * 0.1,
   SHOOTER_SHOT_DELAY: 1000 * 2, // Phaser.Timer.SECOND * 2,
-  BOSS_SHOT_DELAY: 1000, // Phaser.Timer.SECOND,
+  BOSS_SHOT_DELAY: 750, // Phaser.Timer.SECOND,
 
   ENEMY_HEALTH: 2,
   SHOOTER_HEALTH: 5,

@@ -68,7 +68,7 @@ export default class Game extends Phaser.Scene {
     this.score = null;
     this.scoreText = null;
     this.instructions = null;
-    this.bossApproaching = false;
+    this.bossApproaching = true;
     this.zKey = null;
   }
 
@@ -114,7 +114,7 @@ export default class Game extends Phaser.Scene {
     this.enemyFire();
     this.processPlayerInput();
     this.processDelayedEffects();
-    //this.spawnBoss();
+    this.spawnBoss();
 
     //trigger enemies update
     if (this.enemyPool.children)
@@ -220,43 +220,55 @@ export default class Game extends Phaser.Scene {
     }, this);
 
     // Disparos del Boss
-    /*
     if (
       this.bossApproaching === false &&
-      this.boss.body.enable &&
+      this.bossPool.countActive() > 0 &&
       this.boss.nextShotAt < Date.now() &&
-      this.enemyBulletPool.countDead() >= 10
+      this.enemyBulletPool.countActive(false) >= 10
     ) {
       this.boss.nextShotAt = this.time.now + GlobalConstants.BOSS_SHOT_DELAY;
-      this.enemyFireSFX.play();
       for (var i = 0; i < 5; i++) {
+        this.enemyFireSFX.play();
         // process 2 bullets at a time
-        var leftBullet = this.enemyBulletPool.getFirstExists(false);
-        leftBullet.reset(this.boss.x - 10 - i * 10, this.boss.y + 20);
-        var rightBullet = this.enemyBulletPool.getFirstExists(false);
-        rightBullet.reset(this.boss.x + 10 + i * 10, this.boss.y + 20);
-
+        var leftBullet = this.enemyBulletPool.getFirstDead(false);
+        //leftBullet.body.reset(this.boss.x - 10 - i * 10, this.boss.y + 20);
+        leftBullet.enableBody(
+          true,
+          this.boss.x - 10 - i * 10,
+          this.boss.y + 20,
+          true,
+          true
+        );
+        var rightBullet = this.enemyBulletPool.getFirstDead(false);
+        //rightBullet.body.reset(this.boss.x + 10 + i * 10, this.boss.y + 20);
+        rightBullet.enableBody(
+          true,
+          this.boss.x + 10 + i * 10,
+          this.boss.y + 20,
+          true,
+          true
+        );
         if (this.boss.health > GlobalConstants.BOSS_HEALTH / 2) {
           // aim directly at the player
-          this.physics.arcade.moveToObject(
+          this.physics.moveToObject(
             leftBullet,
             this.player,
             GlobalConstants.ENEMY_BULLET_VELOCITY
           );
-          this.physics.arcade.moveToObject(
+          this.physics.moveToObject(
             rightBullet,
             this.player,
             GlobalConstants.ENEMY_BULLET_VELOCITY
           );
         } else {
           // aim slightly off center of the player
-          this.physics.arcade.moveToXY(
+          this.physics.moveToObject(
             leftBullet,
             this.player.x - i * 100,
             this.player.y,
             GlobalConstants.ENEMY_BULLET_VELOCITY
           );
-          this.physics.arcade.moveToXY(
+          this.physics.moveToObject(
             rightBullet,
             this.player.x + i * 100,
             this.player.y,
@@ -265,7 +277,6 @@ export default class Game extends Phaser.Scene {
         }
       }
     }
-    */
   }
 
   // we changed this from checkCollisions()
@@ -316,7 +327,7 @@ export default class Game extends Phaser.Scene {
       this
     );
 
-    // jugador vs Power Up!
+    // player vs Power Up!
     this.physics.add.overlap(
       this.player,
       this.powerUpPool,
@@ -325,25 +336,22 @@ export default class Game extends Phaser.Scene {
       this
     );
 
-    /*
-    //Boss: Solo colisiona una vez que esta en posición
-    if (this.bossApproaching === false) {
-      this.physics.add.overlap(
-        this.bulletPool,
-        this.bossPool,
-        this.enemyHit,
-        null,
-        this
-      );
-      this.physics.add.overlap(
-        this.player,
-        this.bossPool,
-        this.playerCrash,
-        null,
-        this
-      );
-    }
-    */
+    // bullets vs Boss
+    this.physics.add.overlap(
+      this.bulletPool,
+      this.bossPool,
+      this.enemyHit,
+      null,
+      this
+    );
+    // crashing with the Boss
+    this.physics.add.overlap(
+      this.player,
+      this.bossPool,
+      this.playerCrash,
+      null,
+      this
+    );
   }
 
   setUpCollisions() {
@@ -631,7 +639,7 @@ export default class Game extends Phaser.Scene {
   }
 
   damageEnemy(enemy, damage) {
-    //Using damage() automatically kill()s the sprite once its health is reduced to zero.
+    //Using this custom damage() method automatically kills the sprite once its health is reduced to zero.
     enemy.damage(damage);
     // if after damage has been done the enemy is still alive, we show it's been hit.
     if (enemy.health > 0) {
@@ -655,35 +663,41 @@ export default class Game extends Phaser.Scene {
   }
 
   spawnBoss() {
-    if (scene.score >= 20000 && scene.bossPool.countActive() < 1) {
+    if (this.score >= 200 && this.bossPool.countActive() < 1) {
       this.bossApproaching = true;
       //make it approach from the top:
       this.boss = this.bossPool.getFirstDead(
         false,
         this.scale.width / 2,
-        -32,
+        -80,
         null,
         null,
         true
       );
+      this.boss.enableBody(true, this.scale.width / 2, -80, true, true);
       this.boss.body.velocity.y = GlobalConstants.BOSS_Y_VELOCITY;
-      this.boss.play("fly");
-      //if it's in position, start fighting
-      if (this.bossApproaching && this.boss.y > 80) {
-        this.bossApproaching = false;
-        this.boss.nextShotAt = 0;
-
-        this.boss.body.velocity.y = 0;
-        this.boss.body.velocity.x = GlobalConstants.BOSS_X_VELOCITY;
-        // allow bouncing off world bounds
-        this.boss.body.bounce.x = 1;
-        this.boss.body.collideWorldBounds = true;
-      }
+      //this.boss.play("fly");
 
       /*
       this.boss.reset(this.game.width / 2, 0, GlobalConstants.BOSS_HEALTH);
       this.physics.enable(this.boss, Phaser.Physics.ARCADE);
       */
+    }
+    //if it's in position, start fighting
+    if (
+      this.bossPool.countActive() > 0 &&
+      this.bossApproaching &&
+      this.boss.y > 80
+    ) {
+      // make sure we execute this lines only once:
+      this.bossApproaching = false;
+      //start fighting!!
+      this.boss.nextShotAt = 0;
+      this.boss.body.velocity.y = 0;
+      this.boss.body.velocity.x = GlobalConstants.BOSS_X_VELOCITY;
+      // allow bouncing off world bounds
+      this.boss.body.bounce.x = 1;
+      this.boss.body.collideWorldBounds = true;
     }
   }
 
@@ -731,20 +745,21 @@ export default class Game extends Phaser.Scene {
   }
 
   displayEnd(win) {
-    // you can't win and lose at the same time
+    /* you can't win and lose at the same time
     if (this.endText && this.endText.exists) {
       return;
-    }
+    }*/
 
     var msg = win ? "You Win!!!" : "Game Over!";
     this.endText = this.add.text(
-      this.game.width / 2,
-      this.game.height / 2 - 60,
+      this.scale.width / 2,
+      this.scale.height / 2 - 60,
       msg,
       { font: "72px serif", fill: "#fff" }
     );
     //this.endText.anchor.setTo(0.5, 0);
+    this.endText.setOrigin(0.5, 0);
 
-    this.showReturn = this.time.now + GlobalConstants.RETURN_MESSAGE_DELAY;
+    this.showReturn = Date.now() + GlobalConstants.RETURN_MESSAGE_DELAY;
   }
 }
