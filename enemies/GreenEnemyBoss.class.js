@@ -49,11 +49,10 @@ export default class GreenEnemyBoss extends Phaser.Physics.Arcade.Sprite {
   }
 
   explodeAndDie() {
-    console.log("boss is dead!!");
     this.scene.explode(this);
     this.scene.explosionSFX.play();
     addToScore(this.scene, this.reward);
-    this.y = -32;
+    this.y = -80;
     this.health = GlobalConstants.BOSS_HEALTH;
     this.disableBody(true, true);
     this.scene.displayEnd(true);

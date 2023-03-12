@@ -61,7 +61,6 @@ export default class MainMenu extends Phaser.Scene {
     // this.music.stop();
 
     //  And start the actual game in P3 way
-    console.log("starting the game...");
     this.scene.start("Game");
   }
 }

@@ -40,6 +40,7 @@ export default class Game extends Phaser.Scene {
   instructions;
   bossApproaching;
   zKey;
+  gameOver;
 
   constructor() {
     super("Game");
@@ -57,9 +58,7 @@ export default class Game extends Phaser.Scene {
     this.nextShotAt = 0;
     this.shooterDelay = GlobalConstants.SPAWN_SHOOTER_DELAY;
     this.shotDelay = GlobalConstants.SHOT_DELAY;
-
     this.boss = null;
-
     this.powerUpPool = null;
     this.explosionPool = null;
     this.lives = GlobalConstants.PLAYER_EXTRA_LIVES;
@@ -70,64 +69,53 @@ export default class Game extends Phaser.Scene {
     this.instructions = null;
     this.bossApproaching = true;
     this.zKey = null;
+    this.gameOver = false;
   }
 
   preload() {
-    console.log("loadig all sprites...");
     loadSprites(this);
   }
 
   create() {
-    console.log("setting up background...");
     setupBackground(this);
-    console.log("setting up player...");
     setupPlayer(this);
-    console.log("setting up enemies...");
     setupEnemies(this);
-    console.log("setting up player icons...");
     setupPlayerIcons(this);
-    console.log("setting up player bullets...");
     setupPlayerBullets(this);
-    console.log("setting up enemy bullets...");
     setupEnemyBullets(this);
-    console.log("setting up explosions...");
     setupExplosions(this);
-    console.log("setting up text...");
     setupText(this);
-    console.log("setting up audio...");
     setupAudio(this);
-    console.log("setting up collisions...");
     // we dont need colliders
     //this.setUpCollisions();
     this.setUpOverlappings();
 
-    console.log("setting up controls...");
     this.cursors = this.input.keyboard.createCursorKeys();
     this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
   }
 
   update() {
-    // we make the background automatically scroll down
-    this.background.tilePositionY -= 0.05;
-
-    this.spawnEnemies();
-    this.enemyFire();
     this.processPlayerInput();
+    // we keep running things until the game is over:
+    if (!this.gameOver) {
+      // we make the background automatically scroll down
+      this.background.tilePositionY -= 0.05;
+
+      this.spawnEnemies();
+      this.enemyFire();
+      this.spawnBoss();
+
+      //trigger enemies update
+      if (this.enemyPool.children)
+        this.enemyPool.children.each((child) => child.update());
+      if (this.shooterPool.children)
+        this.shooterPool.children.each((child) => child.update());
+      if (this.bulletPool.children)
+        this.bulletPool.children.each((child) => child.update());
+      if (this.enemyBulletPool.children)
+        this.enemyBulletPool.children.each((child) => child.update());
+    }
     this.processDelayedEffects();
-    this.spawnBoss();
-
-    //trigger enemies update
-    if (this.enemyPool.children)
-      this.enemyPool.children.each((child) => child.update());
-
-    if (this.shooterPool.children)
-      this.shooterPool.children.each((child) => child.update());
-
-    if (this.bulletPool.children)
-      this.bulletPool.children.each((child) => child.update());
-
-    if (this.enemyBulletPool.children)
-      this.enemyBulletPool.children.each((child) => child.update());
   }
 
   fire() {
@@ -226,7 +214,7 @@ export default class Game extends Phaser.Scene {
       this.boss.nextShotAt < Date.now() &&
       this.enemyBulletPool.countActive(false) >= 10
     ) {
-      this.boss.nextShotAt = this.time.now + GlobalConstants.BOSS_SHOT_DELAY;
+      this.boss.nextShotAt = Date.now() + GlobalConstants.BOSS_SHOT_DELAY;
       for (var i = 0; i < 5; i++) {
         this.enemyFireSFX.play();
         // process 2 bullets at a time
@@ -248,33 +236,35 @@ export default class Game extends Phaser.Scene {
           true,
           true
         );
-        if (this.boss.health > GlobalConstants.BOSS_HEALTH / 2) {
-          // aim directly at the player
-          this.physics.moveToObject(
-            leftBullet,
-            this.player,
-            GlobalConstants.ENEMY_BULLET_VELOCITY
-          );
-          this.physics.moveToObject(
-            rightBullet,
-            this.player,
-            GlobalConstants.ENEMY_BULLET_VELOCITY
-          );
-        } else {
+        //if (this.boss.health > GlobalConstants.BOSS_HEALTH / 2) {
+        // aim directly at the player
+        this.physics.moveToObject(
+          leftBullet,
+          this.player,
+          GlobalConstants.ENEMY_BULLET_VELOCITY
+        );
+        this.physics.moveToObject(
+          rightBullet,
+          this.player,
+          GlobalConstants.ENEMY_BULLET_VELOCITY
+        );
+        /*} else {
+          this doesn't work like this in P3, so for the sake of this code migration
+          I'll keep things simple and just comment this piece of code. 
           // aim slightly off center of the player
           this.physics.moveToObject(
             leftBullet,
-            this.player.x - i * 100,
+            this.player.x - i * 10,
             this.player.y,
             GlobalConstants.ENEMY_BULLET_VELOCITY
           );
           this.physics.moveToObject(
             rightBullet,
-            this.player.x + i * 100,
+            this.player.x + i * 10,
             this.player.y,
             GlobalConstants.ENEMY_BULLET_VELOCITY
           );
-        }
+        }*/
       }
     }
   }
@@ -534,7 +524,6 @@ export default class Game extends Phaser.Scene {
       }
     }*/
     if (this.zKey.isDown) {
-      console.log("quitting game...");
       this.quitGame();
     }
 
@@ -551,7 +540,7 @@ export default class Game extends Phaser.Scene {
     this.explosionPool.destroy();
     this.instructions.destroy();
     this.scoreText.destroy();
-    //this.endText.destroy();
+    this.endText.destroy();
     //this.returnText.destroy();
     //  Then let's go back to the main menu.
     this.scene.start("MainMenu");
@@ -587,7 +576,6 @@ export default class Game extends Phaser.Scene {
     if (player.ghostUntil && player.ghostUntil > Date.now()) {
       return;
     }
-    console.log(player);
     //this.playerExplosionSFX.play();
     // crashing into an enemy only deals 5 damage
     this.damageEnemy(enemy, GlobalConstants.CRASH_DAMAGE);
@@ -749,17 +737,19 @@ export default class Game extends Phaser.Scene {
     if (this.endText && this.endText.exists) {
       return;
     }*/
+    if (!this.gameOver) {
+      var msg = win ? "You Win!!!" : "Game Over!";
+      this.endText = this.add.text(
+        this.scale.width / 2,
+        this.scale.height / 2 - 60,
+        msg,
+        { font: "72px serif", fill: "#fff" }
+      );
+      //this.endText.anchor.setTo(0.5, 0);
+      this.endText.setOrigin(0.5, 0);
 
-    var msg = win ? "You Win!!!" : "Game Over!";
-    this.endText = this.add.text(
-      this.scale.width / 2,
-      this.scale.height / 2 - 60,
-      msg,
-      { font: "72px serif", fill: "#fff" }
-    );
-    //this.endText.anchor.setTo(0.5, 0);
-    this.endText.setOrigin(0.5, 0);
-
-    this.showReturn = Date.now() + GlobalConstants.RETURN_MESSAGE_DELAY;
+      this.showReturn = Date.now() + GlobalConstants.RETURN_MESSAGE_DELAY;
+      this.gameOver = true;
+    }
   }
 }
