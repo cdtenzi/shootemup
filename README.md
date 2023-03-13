@@ -1,10 +1,10 @@
 # About
 
-This is a complete migration of the code made by _Bryan Bibat_ in his book [HTML5 Shoot'em up in an afternoon](https://leanpub.com/html5shootemupinanafternoon/read). You will find teh complete code starting from the original one made by Bryan, and the different steps i've made to get it working on Phaser 3. Check out the different tags to see what i've made, and in between tags, you can always check the commits history to find out teh small steps i took.
+This is a complete migration of the code made by _Bryan Bibat_ in his book [HTML5 Shoot'em up in an afternoon](https://leanpub.com/html5shootemupinanafternoon/read). You will find teh complete code starting from the original one made by Bryan, and the different steps i've made to get it working on Phaser 3. Check out the different tags to see what I've made, and in between tags, you can always check the commits history to find out the small steps i took.
 
-You won't find the challenges proposed by Bryan in his book, but after going through this migration, I'm pretty sure you can do them by yourself. Go on and purchase his book, I strongly recommend it.
+You won't find the challenges proposed by Bryan in his book, but after going through this migration, I'm pretty sure you can do them by yourself. Go on and purchase his book, it is really good and I strongly recommend it if you want to learn Phaser.
 
-# Migrating from Phase2/PhaserCE to Phaser3
+# Migrating from Phaser2/PhaserCE to Phaser3
 
 Migrating from Phaser 2 (P2 from now on) can be complex sometimes but mostly because of the way things are done in Phaser 3 (P3 from now on).
 
